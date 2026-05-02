@@ -51,16 +51,16 @@ export default function DisciplinaShow({ params }: PageProps) {
               </div>
               <div className="space-y-2">
                 <Link
-                  href={`/calificar/${instructor.id}`}
+                  href={`/calificar/${instructor.id}/step/1`}
                   className="block w-full bg-green-600 text-white text-center py-2 px-4 rounded-md hover:bg-green-700 transition-colors"
                 >
-                  Calificar Instructor
+                  Comenzar encuesta
                 </Link>
                 <Link
-                  href={`/estadisticas/${params.disciplina}`}
-                  className="block w-full bg-blue-600 text-white text-center py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
+                  href="/login?next=/estadisticas"
+                  className="block w-full bg-gray-100 text-gray-700 text-center py-2 px-4 rounded-md hover:bg-gray-200 transition-colors"
                 >
-                  Ver Estadísticas
+                  Ver estadisticas (requiere login)
                 </Link>
               </div>
             </div>

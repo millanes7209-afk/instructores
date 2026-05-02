@@ -1,8 +1,10 @@
 import Link from 'next/link';
+import { RedirectToHome } from './redirect-to-home';
 
 export default function GraciasPage() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-2xl">
+      <RedirectToHome />
       <div className="text-center">
         <div className="mb-8">
           <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -13,6 +15,9 @@ export default function GraciasPage() {
           </h1>
           <p className="text-lg text-gray-600 mb-8">
             Tu opinión nos ayuda a mejorar la calidad de nuestras clases
+          </p>
+          <p className="text-sm text-gray-500 mb-6">
+            Te redirigimos a disciplinas en 1 segundo...
           </p>
         </div>
 

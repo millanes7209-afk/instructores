@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { sql } from '@vercel/postgres';
 import { ensureSurveyTable } from '@/lib/db';
 import { disciplinas, instructores, type Instructor } from '@/lib/data';
@@ -113,12 +112,9 @@ export default async function EstadisticasIndex() {
                 ))}
               </div>
               
-              <Link
-                href={`/estadisticas/${key}`}
-                className="block w-full bg-blue-600 text-white text-center py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
-              >
-                Ver Detalles
-              </Link>
+              <div className="block w-full bg-blue-50 text-blue-700 text-center py-2 px-4 rounded-md">
+                Estadisticas en vivo
+              </div>
             </div>
           ))}
         </div>
