@@ -97,3 +97,5 @@ npm start
 ```
 
 El proyecto esta optimizado para Vercel. Solo asegúrate de configurar `SUPABASE_DB_URL` antes del deploy final.
+
+Nota: si Vercel bloquea un redeploy por autor, crea un nuevo commit desde tu cuenta propietaria del proyecto.
