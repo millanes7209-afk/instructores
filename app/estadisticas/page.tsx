@@ -1,5 +1,4 @@
-import { sql } from '@vercel/postgres';
-import { ensureSurveyTable } from '@/lib/db';
+import { ensureSurveyTable, query } from '@/lib/db';
 import { disciplinas, instructores, type Instructor } from '@/lib/data';
 
 export const dynamic = 'force-dynamic';
@@ -12,14 +11,14 @@ type StatRow = {
 
 export default async function EstadisticasIndex() {
   await ensureSurveyTable();
-  const { rows } = await sql<StatRow>`
+  const { rows } = await query<StatRow>(`
     SELECT
       instructor_id,
       ROUND(AVG(rating)::numeric, 1)::text AS avg_general,
       COUNT(*)::text AS total_answers
     FROM survey_responses
     GROUP BY instructor_id
-  `;
+  `);
 
   const byInstructor = new Map(
     rows.map((row) => [

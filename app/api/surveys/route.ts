@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { randomUUID } from 'crypto';
-import { sql } from '@vercel/postgres';
-import { ensureSurveyTable } from '@/lib/db';
+import { ensureSurveyTable, query } from '@/lib/db';
 
 type Categoria = 'puntualidad' | 'satisfaccion' | 'calificacion_instructor';
 
@@ -34,16 +33,13 @@ export async function POST(request: Request) {
     const surveyId = randomUUID();
     for (const categoria of CATEGORIAS) {
       const current = answers[categoria]!;
-      await sql`
+      await query(
+        `
         INSERT INTO survey_responses (survey_id, instructor_id, categoria, rating, comentario)
-        VALUES (
-          ${surveyId},
-          ${instructorId},
-          ${categoria},
-          ${current.rating},
-          ${current.comment ?? null}
-        );
-      `;
+        VALUES ($1, $2, $3, $4, $5)
+      `,
+        [surveyId, instructorId, categoria, current.rating, current.comment ?? null]
+      );
     }
 
     return NextResponse.json({ ok: true, surveyId });

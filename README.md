@@ -17,7 +17,7 @@ Sistema de evaluación de instructores de gimnasio compatible con Vercel.
 - **React 18**
 - **TypeScript**
 - **Tailwind CSS**
-- **Vercel Postgres** (para respuestas reales)
+- **Supabase Postgres** (para respuestas reales)
 
 ## Instalación
 
@@ -32,12 +32,12 @@ npm run dev
 npm run build
 ```
 
-## Deploy en Vercel (con datos reales)
+## Deploy en Vercel (con Supabase)
 
 1. **Sube este proyecto a GitHub**.
 2. **Importa el repo en [Vercel](https://vercel.com/new)**.
-3. En Vercel, abre tu proyecto y ve a **Storage > Create Database > Postgres**.
-4. Conecta la base de datos al proyecto (Vercel agrega las variables de entorno automaticamente).
+3. En Vercel, agrega la variable de entorno `SUPABASE_DB_URL`.
+4. Usa como valor el connection string de Supabase (pooler).
 5. Ejecuta el deploy.
 
 ## Estructura del Proyecto
@@ -74,7 +74,7 @@ lib/
 
 ## Datos
 
-- Las respuestas del cuestionario se guardan en la tabla `survey_responses` en Vercel Postgres.
+- Las respuestas del cuestionario se guardan en la tabla `survey_responses` en Supabase Postgres.
 - La tabla se crea automaticamente en el primer envio de encuesta.
 - La vista de estadisticas lee datos reales de esa tabla.
 
@@ -96,4 +96,4 @@ npm run build
 npm start
 ```
 
-El proyecto esta optimizado para Vercel. Solo asegúrate de conectar Vercel Postgres antes del deploy final.
+El proyecto esta optimizado para Vercel. Solo asegúrate de configurar `SUPABASE_DB_URL` antes del deploy final.
