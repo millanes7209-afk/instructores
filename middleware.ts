@@ -1,6 +1,7 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { AUTH_COOKIE } from '@/lib/auth-constants';
+// Relative import avoids pulling Next path-resolution helpers into Edge bundle.
+import { AUTH_COOKIE } from './lib/auth-constants';
 
 export function middleware(request: NextRequest) {
   const isProtectedRoute = request.nextUrl.pathname.startsWith('/estadisticas');
