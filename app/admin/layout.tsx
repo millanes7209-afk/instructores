@@ -13,11 +13,8 @@ export default async function AdminLayout({
     redirect('/login?next=/admin');
   }
 
-  const isSuperAdmin = session.rol === 'superadmin';
-
   return (
     <div className="flex min-h-screen bg-slate-50">
-      {/* Sidebar */}
       <aside className="w-64 glass-header border-r border-slate-200 hidden md:block">
         <div className="p-6">
           <Link href="/admin" className="text-xl font-black text-blue-600 tracking-tighter">
@@ -30,12 +27,6 @@ export default async function AdminLayout({
             📊 Dashboard
           </Link>
           
-          {isSuperAdmin && (
-            <Link href="/admin/gimnasios" className="block px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all">
-              🏢 Gimnasios
-            </Link>
-          )}
-          
           <Link href="/admin/disciplinas" className="block px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all">
             🥋 Disciplinas
           </Link>
@@ -45,7 +36,7 @@ export default async function AdminLayout({
           </Link>
 
           <Link href="/estadisticas" className="block px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all">
-            📈 Ver Estadísticas
+            📈 Estadísticas
           </Link>
         </nav>
 
@@ -53,12 +44,12 @@ export default async function AdminLayout({
           <div className="flex items-center gap-3 mb-4">
             <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
               <span className="text-xs font-bold text-blue-600">
-                {session.username[0].toUpperCase()}
+                S
               </span>
             </div>
             <div>
-              <p className="text-xs font-bold text-slate-900">{session.username}</p>
-              <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">{session.rol}</p>
+              <p className="text-xs font-bold text-slate-900">Sergio</p>
+              <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Administrador</p>
             </div>
           </div>
           <form action="/logout" method="post">
@@ -69,12 +60,7 @@ export default async function AdminLayout({
         </div>
       </aside>
 
-      {/* Main Content */}
       <main className="flex-1">
-        <header className="h-16 glass-header flex items-center px-8 md:hidden">
-           {/* Mobile Header simple */}
-           <Link href="/admin" className="text-xl font-black text-blue-600">RateGym</Link>
-        </header>
         <div className="p-8">
           {children}
         </div>

@@ -28,9 +28,8 @@ export async function POST(request: Request) {
       }
     }
 
-    await ensureSurveyTable();
-
     const surveyId = randomUUID();
+
     for (const categoria of CATEGORIAS) {
       const current = answers[categoria]!;
       await query(
