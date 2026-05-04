@@ -21,47 +21,45 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={inter.className}>
-        <div className="min-h-screen bg-gray-50">
-          <header className="bg-white border-b border-gray-200">
-            <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-              <Link href="/" className="font-semibold text-gray-900">
-                RateGym
+        <div className="min-h-screen">
+          <header className="glass-header">
+            <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+              <Link href="/" className="text-2xl font-black tracking-tighter text-blue-600">
+                RateGym<span className="text-slate-400">.</span>
               </Link>
 
-              <div className="flex items-center gap-3">
-                <Link href="/" className="text-sm text-gray-700 hover:text-gray-900">
-                  Disciplinas
-                </Link>
-                <Link href="/calificar" className="text-sm text-gray-700 hover:text-gray-900">
-                  Votar
-                </Link>
-                <Link href="/estadisticas" className="text-sm text-gray-700 hover:text-gray-900">
-                  Estadisticas
-                </Link>
-
+              <div className="flex items-center gap-4">
                 {isLoggedIn ? (
-                  <form action="/logout" method="post">
-                    <button
-                      type="submit"
-                      className="text-sm bg-gray-100 hover:bg-gray-200 text-gray-800 px-3 py-1.5 rounded-md"
-                    >
-                      Cerrar sesion
-                    </button>
-                  </form>
+                  <div className="flex items-center gap-4">
+                    <Link href="/estadisticas" className="text-sm font-medium text-slate-600 hover:text-blue-600">
+                      Panel
+                    </Link>
+                    <form action="/logout" method="post">
+                      <button
+                        type="submit"
+                        className="btn-secondary text-sm"
+                      >
+                        Salir
+                      </button>
+                    </form>
+                  </div>
                 ) : (
                   <Link
                     href="/login?next=/estadisticas"
-                    className="text-sm bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-md"
+                    className="btn-primary text-sm"
                   >
-                    Login
+                    Admin Login
                   </Link>
                 )}
               </div>
             </div>
           </header>
-          {children}
+          <main>
+            {children}
+          </main>
         </div>
       </body>
     </html>
+
   )
 }

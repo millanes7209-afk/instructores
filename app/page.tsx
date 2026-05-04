@@ -3,33 +3,49 @@ import { disciplinas } from '@/lib/data';
 
 export default function DisciplinasIndex() {
   return (
-    <div className="container mx-auto px-4 py-8">
-      <header className="text-center mb-12">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">
-          📋 Selecciona una Disciplina
-        </h1>
-        <p className="text-lg text-gray-600">
-          Elige la disciplina para ver los instructores disponibles
-        </p>
-      </header>
+    <div className="py-16 md:py-24">
+      <div className="container mx-auto px-4">
+        <header className="text-center max-w-2xl mx-auto mb-20">
+          <span className="text-blue-600 font-bold tracking-widest text-xs uppercase mb-3 block">
+            Feedback en tiempo real
+          </span>
+          <h1 className="text-5xl md:text-6xl font-black text-slate-900 mb-6 tracking-tight">
+            Evalúa a tu <span className="text-blue-600">Instructor.</span>
+          </h1>
+          <p className="text-lg text-slate-500 leading-relaxed">
+            Tu opinión nos ayuda a mantener el nivel de excelencia. 
+            Selecciona la disciplina para comenzar la evaluación.
+          </p>
+        </header>
 
-      <main>
         <div className="disciplines-grid">
           {Object.entries(disciplinas).map(([key, disciplina]) => (
             <Link
               key={key}
               href={`/disciplina/${key}`}
-              className="discipline-card"
+              className="discipline-card group"
             >
-              <span className="discipline-icon">{disciplina.icono}</span>
-              <h2 className="discipline-title">{disciplina.nombre}</h2>
-              <p className="discipline-description">{disciplina.descripcion}</p>
+              <div className="discipline-icon">
+                {disciplina.icono}
+              </div>
+              <div>
+                <h2 className="discipline-title group-hover:text-blue-600 transition-colors">
+                  {disciplina.nombre}
+                </h2>
+                <p className="discipline-description mt-2">
+                  {disciplina.descripcion}
+                </p>
+              </div>
+              <div className="mt-4 text-blue-600 font-bold text-sm flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0">
+                Votar ahora <span className="text-lg">→</span>
+              </div>
             </Link>
           ))}
         </div>
-      </main>
+      </div>
     </div>
   );
 }
+
 
 
