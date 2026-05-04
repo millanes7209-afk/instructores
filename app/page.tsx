@@ -41,9 +41,6 @@ export default async function DisciplinasIndex() {
                   {disciplina.descripcion || 'Selecciona para ver instructores'}
                 </p>
               </div>
-              <div className="mt-4 text-blue-600 font-bold text-sm flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0">
-                Votar ahora <span className="text-lg">→</span>
-              </div>
             </Link>
           ))}
         </div>
@@ -51,6 +48,7 @@ export default async function DisciplinasIndex() {
     </div>
   );
 }
+
 
 
 
