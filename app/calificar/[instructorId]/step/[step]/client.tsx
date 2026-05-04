@@ -4,10 +4,36 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
-const questions = [
-  { key: 'puntualidad', label: '¿Qué tan puntual fue el instructor?' },
-  { key: 'satisfaccion', label: '¿Qué tan satisfecho estás con la clase?' },
-  { key: 'calificacion_instructor', label: '¿Cómo calificarías al instructor en general?' },
+interface Question {
+  key: string;
+  title: string;
+  type: 'emoji' | 'stars';
+  icon: string;
+  options: { [key: string]: string };
+}
+
+const questions: Question[] = [
+  {
+    key: 'puntualidad',
+    title: '¿Qué tan puntual fue el instructor?',
+    type: 'emoji',
+    icon: '⏰',
+    options: { 1: '😞', 2: '😐', 3: '🙂', 4: '😊', 5: '🤩' }
+  },
+  {
+    key: 'satisfaccion',
+    title: '¿Qué tan satisfecho estás con la clase?',
+    type: 'emoji',
+    icon: '😄',
+    options: { 1: '😞', 2: '😐', 3: '🙂', 4: '😊', 5: '🤩' }
+  },
+  {
+    key: 'calificacion_instructor',
+    title: '¿Cómo calificarías al instructor en general?',
+    type: 'stars',
+    icon: '⭐',
+    options: { 1: '★', 2: '★', 3: '★', 4: '★', 5: '★' }
+  }
 ];
 
 export default function SurveyStepClient({ instructor, step }: { instructor: any, step: string }) {
@@ -65,15 +91,15 @@ export default function SurveyStepClient({ instructor, step }: { instructor: any
     <div className="container mx-auto px-4 py-8 max-w-2xl">
       <header className="text-center mb-8">
         <div className="flex justify-between items-center mb-6">
-          <Link href="/" className="text-blue-600 hover:text-blue-800">
-            ← Volver a inicio
+          <Link href="/" className="text-blue-600 hover:text-blue-800 font-medium">
+            ← Cancelar
           </Link>
           <div className="flex space-x-2">
             {[1, 2, 3].map((s) => (
               <div
                 key={s}
-                className={`w-3 h-3 rounded-full ${
-                  s <= stepNum ? 'bg-blue-600' : 'bg-gray-300'
+                className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                  s === stepNum ? 'bg-blue-600 scale-125' : s < stepNum ? 'bg-blue-400' : 'bg-gray-200'
                 }`}
               />
             ))}
@@ -81,72 +107,88 @@ export default function SurveyStepClient({ instructor, step }: { instructor: any
         </div>
         
         <div className="text-center mb-6">
-          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
-            <span className="text-2xl font-bold text-blue-600">{instructor.iniciales}</span>
+          <div className="w-20 h-20 bg-gradient-to-tr from-blue-600 to-blue-400 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-500/20">
+            <span className="text-3xl font-black text-white">{instructor.iniciales}</span>
           </div>
           <h2 className="text-2xl font-bold text-gray-900">{instructor.nombre}</h2>
         </div>
       </header>
 
       <main>
-        <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-md p-6">
-          <div className="mb-6">
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">
-              Paso {stepNum} de 3
+        <form onSubmit={handleSubmit} className="premium-card p-8">
+          <div className="text-center mb-8">
+            <div className="text-5xl mb-4 opacity-90">
+              {currentQuestion.icon}
+            </div>
+            <h3 className="text-2xl font-bold text-slate-900 mb-2">
+              {currentQuestion.title}
             </h3>
-            <p className="text-lg text-gray-700 mb-6">
-              {currentQuestion.label}
-            </p>
+            <p className="text-slate-500">Paso {stepNum} de 3</p>
           </div>
 
-          <div className="mb-6">
-            <div className="flex justify-center space-x-4 mb-4">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <button
-                  key={star}
-                  type="button"
-                  onClick={() => setRating(star)}
-                  className={`text-3xl transition-colors ${
-                    star <= rating ? 'text-yellow-400' : 'text-gray-300'
-                  } hover:text-yellow-400`}
-                >
-                  ⭐
-                </button>
-              ))}
-            </div>
-            <div className="flex justify-center text-sm text-gray-600">
-              <span className="mr-4">1 - Muy mal</span>
-              <span>5 - Excelente</span>
-            </div>
+          <div className="mb-8">
+            {currentQuestion.type === 'emoji' ? (
+              <div className="emoji-rating">
+                {Object.entries(currentQuestion.options).map(([value, emoji]) => (
+                  <label key={value}>
+                    <input
+                      type="radio"
+                      name="rating"
+                      value={value}
+                      checked={rating === parseInt(value)}
+                      onChange={() => setRating(parseInt(value))}
+                    />
+                    <span>{emoji}</span>
+                  </label>
+                ))}
+              </div>
+            ) : (
+              <div className="star-rating">
+                {Object.entries(currentQuestion.options).reverse().map(([value, star]) => (
+                  <label key={value}>
+                    <input
+                      type="radio"
+                      name="rating"
+                      value={value}
+                      checked={rating === parseInt(value)}
+                      onChange={() => setRating(parseInt(value))}
+                    />
+                    <span className="star-char">{star}</span>
+                  </label>
+                ))}
+              </div>
+            )}
           </div>
 
-          <div className="mb-6">
-            <label className="block text-gray-700 font-medium mb-2">
-              Comentario (opcional)
+          <div className="mb-8">
+            <label className="block text-slate-700 font-medium mb-3">
+              Comentario adicional (opcional)
             </label>
             <textarea
                value={comment}
                onChange={(e) => setComment(e.target.value)}
-               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+               className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all resize-none"
                rows={3}
-               placeholder="Agrega un comentario..."
+               placeholder="¿Hay algo más que quieras contarnos?"
             />
           </div>
 
-          <div className="flex justify-between">
-            {stepNum > 1 && (
+          <div className="flex justify-between items-center pt-4 border-t border-slate-100">
+            {stepNum > 1 ? (
               <Link
                 href={`/calificar/${instructorId}/step/${stepNum - 1}`}
-                className="px-6 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+                className="btn-secondary"
               >
-                Anterior
+                Volver
               </Link>
+            ) : (
+              <div></div>
             )}
             <button
               type="submit"
-              className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 ml-auto"
+              className="btn-primary px-8"
             >
-              {stepNum === 3 ? 'Finalizar' : 'Siguiente'}
+              {stepNum === 3 ? 'Enviar Evaluación ✓' : 'Siguiente Paso →'}
             </button>
           </div>
         </form>
@@ -154,3 +196,4 @@ export default function SurveyStepClient({ instructor, step }: { instructor: any
     </div>
   );
 }
+

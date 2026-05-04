@@ -67,3 +67,72 @@
   @apply scale-110 rotate-3;
 }
 
+/* Sistema de estrellas */
+.star-rating {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin: 2rem 0;
+}
+
+.star-rating input[type="radio"] {
+  display: none;
+}
+
+.star-rating label {
+  font-size: 3.5rem;
+  color: #d1d5db;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  line-height: 1;
+}
+
+.star-rating label:hover {
+  transform: scale(1.1);
+}
+
+.star-rating input[type="radio"]:checked ~ label .star-char {
+  color: #fbbf24;
+}
+
+.star-rating label .star-char {
+  transition: color 0.2s ease;
+}
+
+/* Sistema de emojis */
+.emoji-rating {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin: 2rem 0;
+}
+
+.emoji-rating input[type="radio"] {
+  display: none;
+}
+
+.emoji-rating label {
+  font-size: 3.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  filter: grayscale(100%) opacity(0.5);
+  line-height: 1;
+}
+
+.emoji-rating label:hover {
+  transform: scale(1.15);
+  filter: grayscale(0%) opacity(1);
+}
+
+.emoji-rating input[type="radio"]:checked ~ label {
+  filter: grayscale(0%) opacity(1);
+  transform: scale(1.2);
+  animation: bounce 0.5s ease;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: scale(1.2); }
+  50% { transform: scale(1.4); }
+}
+
+
