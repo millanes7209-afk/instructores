@@ -1,4 +1,4 @@
-import { ensureSurveyTable, query } from '@/lib/db';
+import { query } from '@/lib/db';
 import { disciplinas, instructores, type Instructor } from '@/lib/data';
 
 export const dynamic = 'force-dynamic';
@@ -13,9 +13,9 @@ export default async function EstadisticasIndex() {
   const { rows } = await query<StatRow>(`
     SELECT
       instructor_id,
-      ROUND(AVG(rating)::numeric, 1)::text AS avg_general,
+      ROUND(AVG(calificacion_instructor)::numeric, 1)::text AS avg_general,
       COUNT(*)::text AS total_answers
-    FROM survey_responses
+    FROM evaluaciones
     GROUP BY instructor_id
   `);
 
@@ -77,7 +77,7 @@ export default async function EstadisticasIndex() {
           {disciplinasConStats.map(({ key, disciplina, instructoresConStats, totalRespuestas, promedioGeneral }) => (
             <div
               key={key}
-              className="bg-white rounded-lg shadow-md p-6 border border-gray-200 hover:shadow-lg transition-shadow"
+              className="premium-card p-6"
             >
               <div className="text-center mb-4">
                 <span className="text-4xl block mb-2">{disciplina.icono}</span>
@@ -93,25 +93,21 @@ export default async function EstadisticasIndex() {
                   <span className="text-gray-600">Promedio general:</span>
                   <span className="font-semibold">{promedioGeneral}/5.0</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Instructores:</span>
-                  <span className="font-semibold">{instructoresConStats.length}</span>
-                </div>
               </div>
               
-              <div className="space-y-2 mb-4">
+              <div className="space-y-2 mb-4 border-t border-slate-100 pt-4">
                 {instructoresConStats.slice(0, 2).map((instructor) => (
                   <div key={instructor.id} className="text-sm">
                     <div className="flex justify-between">
-                      <span className="text-gray-600">{instructor.iniciales}:</span>
-                      <span className="font-medium">{instructor.promedio_general}/5.0</span>
+                      <span className="text-gray-600">{instructor.nombre}:</span>
+                      <span className="font-bold text-blue-600">{instructor.promedio_general}/5.0</span>
                     </div>
                   </div>
                 ))}
               </div>
               
-              <div className="block w-full bg-blue-50 text-blue-700 text-center py-2 px-4 rounded-md">
-                Estadisticas en vivo
+              <div className="text-xs text-center text-slate-400 font-medium">
+                Datos actualizados en vivo
               </div>
             </div>
           ))}
