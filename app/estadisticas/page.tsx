@@ -10,7 +10,6 @@ type StatRow = {
 };
 
 export default async function EstadisticasIndex() {
-  await ensureSurveyTable();
   const { rows } = await query<StatRow>(`
     SELECT
       instructor_id,

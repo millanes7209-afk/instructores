@@ -2,7 +2,7 @@ import './globals.css'
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import Link from 'next/link'
-import { isAdminAuthenticated } from '@/lib/auth'
+import { isAdmin } from '@/lib/auth'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -11,12 +11,13 @@ export const metadata: Metadata = {
   description: 'Sistema de evaluación de instructores de gimnasio',
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const isLoggedIn = isAdminAuthenticated()
+  const isLoggedIn = await isAdmin()
+
 
   return (
     <html lang="es">
