@@ -28,7 +28,7 @@ export default async function AdminDashboard() {
               <Users className="w-6 h-6" />
             </div>
             <p className="text-slate-500 text-sm font-bold uppercase tracking-wider mb-1">Instructores</p>
-            <p className="text-5xl font-black text-slate-900">{instructoresCount.rows[0].count}</p>
+            <p className="text-5xl font-black text-slate-900">{instructorsCount.rows[0].count}</p>
           </div>
         </div>
 
