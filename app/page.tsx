@@ -12,7 +12,7 @@ export default async function DisciplinasIndex() {
       <div className="container mx-auto px-4">
         <header className="text-center max-w-2xl mx-auto mb-20">
           <span className="text-blue-600 font-bold tracking-widest text-xs uppercase mb-3 block">
-            Feedback en tiempo real
+            Nivel Fitness Club | Feedback en tiempo real
           </span>
           <h1 className="text-5xl md:text-6xl font-black text-slate-900 mb-6 tracking-tight">
             Evalúa a tu <span className="text-blue-600">Instructor.</span>

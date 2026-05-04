@@ -24,6 +24,9 @@ export default async function AdminLayout({
             </div>
             RateGym <span className="text-slate-300 font-medium">|</span> <span className="text-slate-800 font-bold text-lg">Admin</span>
           </Link>
+          <div className="mt-4 text-xs font-black text-slate-400 tracking-widest uppercase">
+            Nivel Fitness Club
+          </div>
         </div>
         
         <nav className="flex-1 px-4 space-y-2 mt-4">

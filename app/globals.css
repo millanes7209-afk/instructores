@@ -73,6 +73,7 @@
   justify-content: center;
   gap: 0.5rem;
   margin: 2rem 0;
+  flex-direction: row;
 }
 
 .star-rating input[type="radio"] {
@@ -81,7 +82,7 @@
 
 .star-rating label {
   font-size: 3.5rem;
-  color: #d1d5db;
+  color: #d1d5db; /* Gris para no seleccionadas */
   cursor: pointer;
   transition: all 0.2s ease;
   line-height: 1;
@@ -91,7 +92,8 @@
   transform: scale(1.1);
 }
 
-.star-rating input[type="radio"]:checked ~ label .star-char {
+/* Pintar estrellas activas (la actual y las anteriores) */
+.star-rating label.active .star-char {
   color: #fbbf24;
 }
 
@@ -115,16 +117,21 @@
   font-size: 3.5rem;
   cursor: pointer;
   transition: all 0.2s ease;
-  filter: grayscale(100%) opacity(0.5);
   line-height: 1;
 }
 
-.emoji-rating label:hover {
+.emoji-rating label span {
+  display: inline-block;
+  transition: all 0.2s ease;
+  filter: grayscale(40%) opacity(0.7); /* Color suave, no totalmente gris */
+}
+
+.emoji-rating label:hover span {
   transform: scale(1.15);
   filter: grayscale(0%) opacity(1);
 }
 
-.emoji-rating input[type="radio"]:checked ~ label {
+.emoji-rating input[type="radio"]:checked + span {
   filter: grayscale(0%) opacity(1);
   transform: scale(1.2);
   animation: bounce 0.5s ease;

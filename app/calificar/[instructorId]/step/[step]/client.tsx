@@ -42,7 +42,6 @@ export default function SurveyStepClient({ instructor, step }: { instructor: any
   const instructorId = instructor.id;
   
   const [rating, setRating] = useState<number>(0);
-  const [comment, setComment] = useState('');
 
   if (stepNum < 1 || stepNum > 3) {
     return <div>Paso inválido</div>;
@@ -50,45 +49,52 @@ export default function SurveyStepClient({ instructor, step }: { instructor: any
 
   const currentQuestion = questions[stepNum - 1];
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleRatingSelect = async (value: number) => {
+    setRating(value);
     
-    if (rating === 0) {
-      alert('Por favor selecciona una calificación');
-      return;
-    }
+    // Auto advance after a short delay for the animation
+    setTimeout(async () => {
+      const key = `survey:${instructorId}`;
+      const surveyData = JSON.parse(sessionStorage.getItem(key) || '{}');
+      surveyData[currentQuestion.key] = { rating: value };
+      sessionStorage.setItem(key, JSON.stringify(surveyData));
 
-    const key = `survey:${instructorId}`;
-    const surveyData = JSON.parse(sessionStorage.getItem(key) || '{}');
-    surveyData[currentQuestion.key] = { rating, comment };
-    sessionStorage.setItem(key, JSON.stringify(surveyData));
+      if (stepNum < 3) {
+        router.push(`/calificar/${instructorId}/step/${stepNum + 1}`);
+      } else {
+        const payload = {
+          instructorId,
+          answers: surveyData,
+        };
 
-    if (stepNum < 3) {
-      router.push(`/calificar/${instructorId}/step/${stepNum + 1}`);
-    } else {
-      const payload = {
-        instructorId,
-        answers: surveyData,
-      };
+        try {
+          const response = await fetch('/api/surveys', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
 
-      const response = await fetch('/api/surveys', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
+          if (!response.ok) {
+            alert('No se pudo guardar la encuesta. Intenta de nuevo.');
+            return;
+          }
 
-      if (!response.ok) {
-        alert('No se pudo guardar la encuesta. Intenta de nuevo.');
-        return;
+          sessionStorage.removeItem(key);
+          router.push('/calificar/gracias');
+        } catch (e) {
+          alert('Error de conexión.');
+        }
       }
-
-      sessionStorage.removeItem(key);
-      router.push('/calificar/gracias');
-    }
+    }, 500); // 500ms delay to see the animation
   };
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-2xl">
+      <div className="text-center mb-4">
+        <span className="text-sm font-bold text-slate-400 tracking-widest uppercase">
+          NIVEL FITNESS CLUB
+        </span>
+      </div>
       <header className="text-center mb-8">
         <div className="flex justify-between items-center mb-6">
           <Link href="/" className="text-blue-600 hover:text-blue-800 font-medium">
@@ -115,7 +121,7 @@ export default function SurveyStepClient({ instructor, step }: { instructor: any
       </header>
 
       <main>
-        <form onSubmit={handleSubmit} className="premium-card p-8">
+        <div className="premium-card p-8">
           <div className="text-center mb-8">
             <div className="text-5xl mb-4 opacity-90">
               {currentQuestion.icon}
@@ -136,41 +142,28 @@ export default function SurveyStepClient({ instructor, step }: { instructor: any
                       name="rating"
                       value={value}
                       checked={rating === parseInt(value)}
-                      onChange={() => setRating(parseInt(value))}
+                      onChange={() => handleRatingSelect(parseInt(value))}
                     />
                     <span>{emoji}</span>
                   </label>
                 ))}
               </div>
             ) : (
-              <div className="star-rating">
-                {Object.entries(currentQuestion.options).reverse().map(([value, star]) => (
-                  <label key={value}>
+              <div className="star-rating" onMouseLeave={() => {}}>
+                {Object.entries(currentQuestion.options).map(([value, star]) => (
+                  <label key={value} className={parseInt(value) <= rating ? 'active' : ''}>
                     <input
                       type="radio"
                       name="rating"
                       value={value}
                       checked={rating === parseInt(value)}
-                      onChange={() => setRating(parseInt(value))}
+                      onChange={() => handleRatingSelect(parseInt(value))}
                     />
                     <span className="star-char">{star}</span>
                   </label>
                 ))}
               </div>
             )}
-          </div>
-
-          <div className="mb-8">
-            <label className="block text-slate-700 font-medium mb-3">
-              Comentario adicional (opcional)
-            </label>
-            <textarea
-               value={comment}
-               onChange={(e) => setComment(e.target.value)}
-               className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all resize-none"
-               rows={3}
-               placeholder="¿Hay algo más que quieras contarnos?"
-            />
           </div>
 
           <div className="flex justify-between items-center pt-4 border-t border-slate-100">
@@ -184,16 +177,14 @@ export default function SurveyStepClient({ instructor, step }: { instructor: any
             ) : (
               <div></div>
             )}
-            <button
-              type="submit"
-              className="btn-primary px-8"
-            >
-              {stepNum === 3 ? 'Enviar Evaluación ✓' : 'Siguiente Paso →'}
-            </button>
+            <div className="text-sm text-slate-400 italic">
+              Selecciona una opción para continuar
+            </div>
           </div>
-        </form>
+        </div>
       </main>
     </div>
   );
 }
+
 

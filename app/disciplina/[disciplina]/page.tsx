@@ -36,6 +36,9 @@ export default async function DisciplinaShow({ params }: PageProps) {
           ← Volver a disciplinas
         </Link>
         <div className="text-center">
+          <span className="text-sm font-bold text-slate-400 tracking-widest uppercase mb-4 block">
+            NIVEL FITNESS CLUB
+          </span>
           <span className="text-6xl block mb-4">{disciplina.icono}</span>
           <h1 className="text-4xl font-black text-slate-900 mb-3 tracking-tight">{disciplina.nombre}</h1>
           <p className="text-lg text-slate-500 max-w-2xl mx-auto">{disciplina.descripcion || 'Selecciona un instructor para evaluar su clase.'}</p>
