@@ -77,19 +77,44 @@ export default async function AdminLayout({
         </div>
       </aside>
 
-      <main className="flex-1 max-h-screen overflow-y-auto bg-slate-50/50">
-        <header className="h-16 bg-white border-b border-slate-200 flex items-center px-6 md:hidden sticky top-0 z-10 shadow-sm">
+      <main className="flex-1 max-h-screen overflow-y-auto bg-slate-50/50 pb-20 md:pb-0">
+        <header className="h-16 bg-white border-b border-slate-200 flex justify-between items-center px-6 md:hidden sticky top-0 z-10 shadow-sm">
            <Link href="/admin" className="text-xl font-black text-blue-600 flex items-center gap-2">
              <div className="w-6 h-6 bg-blue-600 rounded flex items-center justify-center">
                <span className="text-white text-xs leading-none">R</span>
              </div>
              RateGym
            </Link>
+           <form action="/logout" method="post">
+             <button type="submit" className="text-slate-400 hover:text-red-500 transition-colors">
+               <LogOut className="w-5 h-5" />
+             </button>
+           </form>
         </header>
         <div className="p-6 md:p-10 max-w-6xl mx-auto">
           {children}
         </div>
       </main>
+
+      {/* Mobile Bottom Navigation */}
+      <nav className="md:hidden fixed bottom-0 w-full bg-white border-t border-slate-200 flex justify-around items-center h-16 px-2 z-50 pb-safe">
+        <Link href="/admin" className="flex flex-col items-center justify-center w-full h-full text-slate-500 hover:text-blue-600">
+          <LayoutDashboard className="w-5 h-5 mb-1" />
+          <span className="text-[10px] font-bold uppercase tracking-wider">Inicio</span>
+        </Link>
+        <Link href="/admin/disciplinas" className="flex flex-col items-center justify-center w-full h-full text-slate-500 hover:text-blue-600">
+          <Dumbbell className="w-5 h-5 mb-1" />
+          <span className="text-[10px] font-bold uppercase tracking-wider">Disciplinas</span>
+        </Link>
+        <Link href="/admin/instructores" className="flex flex-col items-center justify-center w-full h-full text-slate-500 hover:text-blue-600">
+          <Users className="w-5 h-5 mb-1" />
+          <span className="text-[10px] font-bold uppercase tracking-wider">Instructores</span>
+        </Link>
+        <Link href="/estadisticas" className="flex flex-col items-center justify-center w-full h-full text-slate-500 hover:text-blue-600">
+          <BarChart3 className="w-5 h-5 mb-1" />
+          <span className="text-[10px] font-bold uppercase tracking-wider">Reportes</span>
+        </Link>
+      </nav>
     </div>
   );
 }

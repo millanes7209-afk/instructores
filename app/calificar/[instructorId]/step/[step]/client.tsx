@@ -164,6 +164,10 @@ export default function SurveyStepClient({ instructor, step }: { instructor: any
                 ))}
               </div>
             )}
+            <div className="flex justify-between max-w-[280px] mx-auto text-sm text-slate-500 font-medium mt-2">
+              <span>1 - Muy mal</span>
+              <span>5 - Excelente</span>
+            </div>
           </div>
 
           <div className="flex justify-between items-center pt-4 border-t border-slate-100">
