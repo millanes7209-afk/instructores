@@ -3,20 +3,72 @@
 import { useState } from 'react';
 import { createDisciplina, updateDisciplina, deleteDisciplina } from '../actions';
 
+// Mapeo automático de nombre → emoji
+function autoEmoji(nombre: string): string {
+  const n = nombre.toLowerCase().trim();
+  const map: Record<string, string> = {
+    'zumba': '💃',
+    'aqua zumba': '💦',
+    'spinning': '🚴',
+    'yoga': '🧘',
+    'pilates': '🤸',
+    'pilates reformer': '🤸‍♀️',
+    'body combat': '🥊',
+    'boxing': '🥊',
+    'hiit': '🔥',
+    'grit': '💪',
+    'grit step': '💪',
+    'step': '🪜',
+    'aquafit': '🏊',
+    'natación': '🏊‍♂️',
+    'natacion': '🏊‍♂️',
+    'crossfit': '🏋️',
+    'power jump': '⬆️',
+    'funcional': '🏋️‍♂️',
+    'body pump': '🏋️',
+    'body balance': '🧘‍♂️',
+    'stretching': '🙆',
+    'aerobics': '🤸‍♂️',
+    'kickboxing': '🦵',
+    'running': '🏃',
+    'ciclismo': '🚵',
+    'danza': '💃',
+    'baile': '💃',
+    'meditación': '🧘‍♀️',
+    'meditacion': '🧘‍♀️',
+    'trx': '🔗',
+    'calistenia': '💪',
+  };
+  
+  // Buscar coincidencia exacta primero
+  if (map[n]) return map[n];
+  
+  // Buscar coincidencia parcial
+  for (const [key, emoji] of Object.entries(map)) {
+    if (n.includes(key) || key.includes(n)) return emoji;
+  }
+  
+  // Default
+  return '🏅';
+}
+
 export default function DisciplinasCrudClient({ initialData }: { initialData: any[] }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({ nombre: '', descripcion: '', icono: '' });
+  const [formData, setFormData] = useState({ nombre: '', descripcion: '' });
+  const [previewEmoji, setPreviewEmoji] = useState('🏅');
 
   const handleOpenNew = () => {
     setEditingId(null);
-    setFormData({ nombre: '', descripcion: '', icono: '' });
+    setFormData({ nombre: '', descripcion: '' });
+    setPreviewEmoji('🏅');
     setIsModalOpen(true);
   };
 
   const handleOpenEdit = (item: any) => {
     setEditingId(item.id);
-    setFormData({ nombre: item.nombre, descripcion: item.descripcion || '', icono: item.icono });
+    setFormData({ nombre: item.nombre, descripcion: item.descripcion || '' });
+    setPreviewEmoji(item.icono || autoEmoji(item.nombre));
     setIsModalOpen(true);
   };
 
@@ -26,12 +78,17 @@ export default function DisciplinasCrudClient({ initialData }: { initialData: an
     }
   };
 
+  const handleNameChange = (value: string) => {
+    setFormData(prev => ({ ...prev, nombre: value }));
+    setPreviewEmoji(autoEmoji(value));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const data = new FormData();
     data.append('nombre', formData.nombre);
     data.append('descripcion', formData.descripcion);
-    data.append('icono', formData.icono);
+    data.append('icono', previewEmoji);
 
     if (editingId) {
       await updateDisciplina(editingId, data);
@@ -95,7 +152,7 @@ export default function DisciplinasCrudClient({ initialData }: { initialData: an
           <div className="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
             <div className="p-6 border-b border-slate-100 flex justify-between items-center">
               <h3 className="text-lg font-bold text-slate-900">{editingId ? 'Editar Disciplina' : 'Nueva Disciplina'}</h3>
-              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600">&times;</button>
+              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600 text-2xl leading-none">&times;</button>
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div>
@@ -105,8 +162,8 @@ export default function DisciplinasCrudClient({ initialData }: { initialData: an
                   required 
                   className="w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                   value={formData.nombre}
-                  onChange={(e) => setFormData({...formData, nombre: e.target.value})}
-                  placeholder="Ej: Yoga"
+                  onChange={(e) => handleNameChange(e.target.value)}
+                  placeholder="Ej: Zumba, Spinning, Yoga..."
                 />
               </div>
               <div>
@@ -119,15 +176,11 @@ export default function DisciplinasCrudClient({ initialData }: { initialData: an
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Icono (Emoji)</label>
-                <input 
-                  type="text" 
-                  required 
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                  value={formData.icono}
-                  onChange={(e) => setFormData({...formData, icono: e.target.value})}
-                  placeholder="🧘‍♀️"
-                />
+                <label className="block text-sm font-medium text-slate-700 mb-1">Icono (automático)</label>
+                <div className="flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-lg px-4 py-3">
+                  <span className="text-3xl">{previewEmoji}</span>
+                  <span className="text-sm text-slate-500">Se asigna automáticamente según el nombre de la disciplina</span>
+                </div>
               </div>
               <div className="pt-4 flex justify-end gap-3">
                 <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg">
@@ -144,3 +197,4 @@ export default function DisciplinasCrudClient({ initialData }: { initialData: an
     </div>
   );
 }
+
