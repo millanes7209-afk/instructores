@@ -178,9 +178,31 @@ export default function ChartsClient({
                 </div>
 
                 <div className="grid md:grid-cols-3 gap-8">
-                  {/* Gauge Chart (Gasolina) */}
+                  {/* 1. Puntualidad - Area Chart (primera pregunta) */}
                   <div>
-                    <h5 className="text-center font-bold text-slate-700 mb-4">Satisfacción (Tablero)</h5>
+                    <h5 className="text-center font-bold text-slate-700 mb-4">Puntualidad</h5>
+                    <div className="h-64">
+                      <Line data={chartData.puntualidad} options={{
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                          y: { 
+                            beginAtZero: true, 
+                            title: { display: true, text: 'Votos' },
+                            ticks: { stepSize: 1 }
+                          },
+                          x: { 
+                            title: { display: true, text: 'Nivel (1-5)' } 
+                          }
+                        }
+                      }} />
+                    </div>
+                  </div>
+
+                  {/* 2. Satisfacción - Gauge Chart (segunda pregunta) */}
+                  <div>
+                    <h5 className="text-center font-bold text-slate-700 mb-4">Satisfacción</h5>
                     <div className="h-48 relative flex items-end justify-center">
                       <Doughnut 
                         data={chartData.satisfaccion} 
@@ -202,7 +224,7 @@ export default function ChartsClient({
                     </div>
                   </div>
 
-                  {/* Pie Chart */}
+                  {/* 3. Calificación General - Pie Chart (tercera pregunta) */}
                   <div>
                     <h5 className="text-center font-bold text-slate-700 mb-4">Calificación General</h5>
                     <div className="h-64">
@@ -214,31 +236,11 @@ export default function ChartsClient({
                             position: 'bottom',
                             labels: {
                               usePointStyle: true,
-                              pointStyle: 'circle'
+                              pointStyle: 'circle',
+                              font: { size: 10 },
+                              padding: 8
                             }
                           } 
-                        }
-                      }} />
-                    </div>
-                  </div>
-
-                  {/* Area Chart */}
-                  <div>
-                    <h5 className="text-center font-bold text-slate-700 mb-4">Puntualidad (Áreas)</h5>
-                    <div className="h-64">
-                      <Line data={chartData.puntualidad} options={{
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: { legend: { display: false } },
-                        scales: {
-                          y: { 
-                            beginAtZero: true, 
-                            title: { display: true, text: 'Votos' },
-                            ticks: { stepSize: 1 }
-                          },
-                          x: { 
-                            title: { display: true, text: 'Nivel (1-5)' } 
-                          }
                         }
                       }} />
                     </div>

@@ -49,7 +49,7 @@ export default async function AdminLayout({
 
           <div className="pt-6 mt-6 border-t border-slate-100">
             <p className="px-4 text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">Reportes</p>
-            <Link href="/estadisticas" className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-slate-600 hover:bg-blue-50 hover:text-blue-700 rounded-xl transition-all group">
+            <Link href="/admin/estadisticas" className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-slate-600 hover:bg-blue-50 hover:text-blue-700 rounded-xl transition-all group">
               <BarChart3 className="w-5 h-5 text-slate-400 group-hover:text-blue-600 transition-colors" />
               Estadísticas
             </Link>
@@ -110,7 +110,7 @@ export default async function AdminLayout({
           <Users className="w-5 h-5 mb-1" />
           <span className="text-[10px] font-bold uppercase tracking-wider">Instructores</span>
         </Link>
-        <Link href="/estadisticas" className="flex flex-col items-center justify-center w-full h-full text-slate-500 hover:text-blue-600">
+        <Link href="/admin/estadisticas" className="flex flex-col items-center justify-center w-full h-full text-slate-500 hover:text-blue-600">
           <BarChart3 className="w-5 h-5 mb-1" />
           <span className="text-[10px] font-bold uppercase tracking-wider">Reportes</span>
         </Link>
