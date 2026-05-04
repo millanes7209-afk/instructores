@@ -23,17 +23,8 @@ export default function GraciasPage() {
 
         <div className="space-y-4">
           <Link
-            href="/calificar"
-            className="inline-block bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors"
-          >
-            Calificar otro instructor
-          </Link>
-          
-          <br />
-          
-          <Link
             href="/"
-            className="inline-block text-blue-600 hover:text-blue-800"
+            className="inline-block text-blue-600 font-bold hover:text-blue-800 transition-colors"
           >
             Volver al inicio
           </Link>

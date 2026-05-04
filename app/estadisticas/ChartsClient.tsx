@@ -1,11 +1,54 @@
 'use client';
 
 import { useState } from 'react';
-import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
-import { Bar, Pie } from 'react-chartjs-2';
+import { 
+  Chart as ChartJS, CategoryScale, LinearScale, BarElement, 
+  Title, Tooltip, Legend, ArcElement, PointElement, LineElement, Filler 
+} from 'chart.js';
+import { Bar, Pie, Doughnut, Line } from 'react-chartjs-2';
 import Link from 'next/link';
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
+ChartJS.register(
+  CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, 
+  ArcElement, PointElement, LineElement, Filler
+);
+
+// Plugin para la aguja del velocímetro
+const gaugeNeedle = {
+  id: 'gaugeNeedle',
+  afterDatasetDraw(chart: any, args: any, options: any) {
+    const { ctx, chartArea: { width, height } } = chart;
+    ctx.save();
+    
+    // Obtener promedio (de 1 a 5)
+    const average = options.average || 3; 
+    const percentage = (average - 1) / 4; 
+    
+    // Ángulo en radianes (Math.PI es izquierda, 2*Math.PI es derecha)
+    const angle = Math.PI + (percentage * Math.PI); 
+    
+    const cx = chart.getDatasetMeta(0).data[0].x;
+    const cy = chart.getDatasetMeta(0).data[0].y;
+    
+    ctx.translate(cx, cy);
+    ctx.rotate(angle);
+    ctx.beginPath();
+    ctx.moveTo(0, -5);
+    // Largo de la aguja relativo al gráfico
+    ctx.lineTo(chart.getDatasetMeta(0).data[0].outerRadius - 20, 0);
+    ctx.lineTo(0, 5);
+    ctx.fillStyle = '#334155'; // slate-700
+    ctx.fill();
+    ctx.restore();
+
+    // Círculo central
+    ctx.beginPath();
+    ctx.arc(cx, cy, 10, 0, Math.PI * 2);
+    ctx.fillStyle = '#334155';
+    ctx.fill();
+    ctx.restore();
+  }
+};
 
 export default function ChartsClient({
   disciplinas,
@@ -46,16 +89,13 @@ export default function ChartsClient({
       satisfaccion: {
         labels: ['Muy Insatisfecho', 'Insatisfecho', 'Neutral', 'Satisfecho', 'Muy Satisfecho'],
         datasets: [{
-          label: 'Satisfacción',
-          data: [
-            evaluaciones.filter(e => e.instructor_id.toString() === instructorId.toString() && Number(e.satisfaccion) === 1).length,
-            evaluaciones.filter(e => e.instructor_id.toString() === instructorId.toString() && Number(e.satisfaccion) === 2).length,
-            evaluaciones.filter(e => e.instructor_id.toString() === instructorId.toString() && Number(e.satisfaccion) === 3).length,
-            evaluaciones.filter(e => e.instructor_id.toString() === instructorId.toString() && Number(e.satisfaccion) === 4).length,
-            evaluaciones.filter(e => e.instructor_id.toString() === instructorId.toString() && Number(e.satisfaccion) === 5).length,
-          ],
+          label: 'Niveles',
+          data: [1, 1, 1, 1, 1], // Distribución equitativa para el fondo del tablero
           backgroundColor: ['#ef4444', '#f97316', '#eab308', '#22c55e', '#10b981'],
-          borderWidth: 0
+          borderWidth: 0,
+          circumference: 180,
+          rotation: -90,
+          cutout: '75%'
         }]
       },
       calificacion: {
@@ -74,18 +114,20 @@ export default function ChartsClient({
         }]
       },
       puntualidad: {
-        labels: ['Siempre tarde', 'A veces tarde', 'Puntual', 'Bueno', 'Excelente'],
+        labels: ['1', '2', '3', '4', '5'],
         datasets: [{
-          label: 'Porcentaje',
+          label: 'Votos Puntualidad',
           data: [
-            (evaluaciones.filter(e => e.instructor_id.toString() === instructorId.toString() && Number(e.puntualidad) === 1).length / (evaluaciones.filter(e => e.instructor_id.toString() === instructorId.toString()).length || 1)) * 100 || 0,
-            (evaluaciones.filter(e => e.instructor_id.toString() === instructorId.toString() && Number(e.puntualidad) === 2).length / (evaluaciones.filter(e => e.instructor_id.toString() === instructorId.toString()).length || 1)) * 100 || 0,
-            (evaluaciones.filter(e => e.instructor_id.toString() === instructorId.toString() && Number(e.puntualidad) === 3).length / (evaluaciones.filter(e => e.instructor_id.toString() === instructorId.toString()).length || 1)) * 100 || 0,
-            (evaluaciones.filter(e => e.instructor_id.toString() === instructorId.toString() && Number(e.puntualidad) === 4).length / (evaluaciones.filter(e => e.instructor_id.toString() === instructorId.toString()).length || 1)) * 100 || 0,
-            (evaluaciones.filter(e => e.instructor_id.toString() === instructorId.toString() && Number(e.puntualidad) === 5).length / (evaluaciones.filter(e => e.instructor_id.toString() === instructorId.toString()).length || 1)) * 100 || 0,
+            evaluaciones.filter(e => e.instructor_id.toString() === instructorId.toString() && Number(e.puntualidad) === 1).length,
+            evaluaciones.filter(e => e.instructor_id.toString() === instructorId.toString() && Number(e.puntualidad) === 2).length,
+            evaluaciones.filter(e => e.instructor_id.toString() === instructorId.toString() && Number(e.puntualidad) === 3).length,
+            evaluaciones.filter(e => e.instructor_id.toString() === instructorId.toString() && Number(e.puntualidad) === 4).length,
+            evaluaciones.filter(e => e.instructor_id.toString() === instructorId.toString() && Number(e.puntualidad) === 5).length,
           ],
-          backgroundColor: ['#ef4444', '#f97316', '#eab308', '#22c55e', '#10b981'],
-          borderWidth: 0
+          borderColor: '#3b82f6',
+          backgroundColor: 'rgba(59, 130, 246, 0.2)',
+          fill: true,
+          tension: 0.4
         }]
       }
     };
@@ -136,41 +178,67 @@ export default function ChartsClient({
                 </div>
 
                 <div className="grid md:grid-cols-3 gap-8">
+                  {/* Gauge Chart (Gasolina) */}
                   <div>
-                    <h5 className="text-center font-bold text-slate-700 mb-4">Satisfacción</h5>
-                    <div className="h-64">
-                      <Pie data={chartData.satisfaccion} options={{
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: { legend: { position: 'bottom' } }
-                      }} />
+                    <h5 className="text-center font-bold text-slate-700 mb-4">Satisfacción (Tablero)</h5>
+                    <div className="h-48 relative flex items-end justify-center">
+                      <Doughnut 
+                        data={chartData.satisfaccion} 
+                        plugins={[gaugeNeedle]}
+                        options={{
+                          responsive: true,
+                          maintainAspectRatio: false,
+                          plugins: { 
+                            legend: { display: false },
+                            tooltip: { enabled: false },
+                            // @ts-ignore
+                            gaugeNeedle: { average: stats.satisfaccion || 1 }
+                          }
+                        }} 
+                      />
+                      <div className="absolute bottom-0 text-center w-full">
+                        <span className="text-2xl font-black text-slate-800">{stats.satisfaccion}</span><span className="text-slate-400">/5</span>
+                      </div>
                     </div>
                   </div>
 
+                  {/* Pie Chart */}
                   <div>
                     <h5 className="text-center font-bold text-slate-700 mb-4">Calificación General</h5>
                     <div className="h-64">
-                      <Bar data={chartData.calificacion} options={{
+                      <Pie data={chartData.calificacion} options={{
                         responsive: true,
                         maintainAspectRatio: false,
-                        plugins: { legend: { display: false } },
-                        scales: {
-                          y: { beginAtZero: true, title: { display: true, text: 'Votos' } },
+                        plugins: { 
+                          legend: { 
+                            position: 'bottom',
+                            labels: {
+                              usePointStyle: true,
+                              pointStyle: 'circle'
+                            }
+                          } 
                         }
                       }} />
                     </div>
                   </div>
 
+                  {/* Area Chart */}
                   <div>
-                    <h5 className="text-center font-bold text-slate-700 mb-4">Puntualidad</h5>
+                    <h5 className="text-center font-bold text-slate-700 mb-4">Puntualidad (Áreas)</h5>
                     <div className="h-64">
-                      <Bar data={chartData.puntualidad} options={{
+                      <Line data={chartData.puntualidad} options={{
                         responsive: true,
                         maintainAspectRatio: false,
-                        indexAxis: 'y',
                         plugins: { legend: { display: false } },
                         scales: {
-                          x: { beginAtZero: true, max: 100, title: { display: true, text: 'Porcentaje (%)' } }
+                          y: { 
+                            beginAtZero: true, 
+                            title: { display: true, text: 'Votos' },
+                            ticks: { stepSize: 1 }
+                          },
+                          x: { 
+                            title: { display: true, text: 'Nivel (1-5)' } 
+                          }
                         }
                       }} />
                     </div>
