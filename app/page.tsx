@@ -1,7 +1,12 @@
 import Link from 'next/link';
-import { disciplinas } from '@/lib/data';
+import { query } from '@/lib/db';
 
-export default function DisciplinasIndex() {
+export const dynamic = 'force-dynamic';
+
+export default async function DisciplinasIndex() {
+  const result = await query('SELECT * FROM disciplinas ORDER BY nombre ASC');
+  const disciplinas = result.rows as any[];
+
   return (
     <div className="py-16 md:py-24">
       <div className="container mx-auto px-4">
@@ -19,10 +24,10 @@ export default function DisciplinasIndex() {
         </header>
 
         <div className="disciplines-grid">
-          {Object.entries(disciplinas).map(([key, disciplina]) => (
+          {disciplinas.map((disciplina) => (
             <Link
-              key={key}
-              href={`/disciplina/${key}`}
+              key={disciplina.slug}
+              href={`/disciplina/${disciplina.slug}`}
               className="discipline-card group"
             >
               <div className="discipline-icon">
@@ -33,7 +38,7 @@ export default function DisciplinasIndex() {
                   {disciplina.nombre}
                 </h2>
                 <p className="discipline-description mt-2">
-                  {disciplina.descripcion}
+                  {disciplina.descripcion || 'Selecciona para ver instructores'}
                 </p>
               </div>
               <div className="mt-4 text-blue-600 font-bold text-sm flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0">
@@ -46,6 +51,7 @@ export default function DisciplinasIndex() {
     </div>
   );
 }
+
 
 
 

@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { disciplinas, instructores } from '@/lib/data';
+import { query } from '@/lib/db';
 
 interface PageProps {
   params: {
@@ -8,65 +8,72 @@ interface PageProps {
   };
 }
 
-export default function DisciplinaShow({ params }: PageProps) {
-  const disciplina = disciplinas[params.disciplina];
+export const dynamic = 'force-dynamic';
+
+export default async function DisciplinaShow({ params }: PageProps) {
+  const resDisp = await query('SELECT * FROM disciplinas WHERE slug = $1 LIMIT 1', [params.disciplina]);
+  const disciplina = resDisp.rows[0] as any;
   
   if (!disciplina) {
     notFound();
   }
 
-  const instructoresDisciplina = Object.values(instructores)
-    .filter(instructor => instructor.especialidad === disciplina.nombre)
-    .slice(0, 2); // Limitar a 2 instructores
+  const resInst = await query(`
+    SELECT i.* 
+    FROM instructores i
+    JOIN instructor_disciplinas id ON i.id = id.instructor_id
+    WHERE id.disciplina_id = $1
+  `, [disciplina.id]);
+  const instructoresDisciplina = resInst.rows as any[];
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <header className="mb-8">
+      <header className="mb-12">
         <Link 
           href="/" 
-          className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-4"
+          className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-6 font-medium"
         >
           ← Volver a disciplinas
         </Link>
         <div className="text-center">
           <span className="text-6xl block mb-4">{disciplina.icono}</span>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">{disciplina.nombre}</h1>
-          <p className="text-lg text-gray-600">{disciplina.descripcion}</p>
+          <h1 className="text-4xl font-black text-slate-900 mb-3 tracking-tight">{disciplina.nombre}</h1>
+          <p className="text-lg text-slate-500 max-w-2xl mx-auto">{disciplina.descripcion || 'Selecciona un instructor para evaluar su clase.'}</p>
         </div>
       </header>
 
       <main>
-        <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
           {instructoresDisciplina.map((instructor) => (
             <div
               key={instructor.id}
-              className="bg-white rounded-lg shadow-md p-6 border border-gray-200"
+              className="premium-card p-6"
             >
-              <div className="text-center mb-4">
-                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <span className="text-2xl font-bold text-blue-600">{instructor.iniciales}</span>
+              <div className="text-center mb-6">
+                <div className="w-20 h-20 bg-gradient-to-tr from-blue-600 to-blue-400 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-500/20">
+                  <span className="text-3xl font-black text-white">{instructor.iniciales}</span>
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900">{instructor.nombre}</h3>
-                <p className="text-gray-600">{instructor.especialidad}</p>
+                <h3 className="text-xl font-bold text-slate-900">{instructor.nombre}</h3>
+                <p className="text-slate-500 text-sm font-medium">{disciplina.nombre}</p>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <Link
                   href={`/calificar/${instructor.id}/step/1`}
-                  className="block w-full bg-green-600 text-white text-center py-2 px-4 rounded-md hover:bg-green-700 transition-colors"
+                  className="btn-primary block w-full text-center"
                 >
-                  Comenzar encuesta
-                </Link>
-                <Link
-                  href="/login?next=/estadisticas"
-                  className="block w-full bg-gray-100 text-gray-700 text-center py-2 px-4 rounded-md hover:bg-gray-200 transition-colors"
-                >
-                  Ver estadisticas (requiere login)
+                  Evaluar Instructor
                 </Link>
               </div>
             </div>
           ))}
+          {instructoresDisciplina.length === 0 && (
+             <div className="col-span-full text-center p-10 bg-slate-50 rounded-2xl border border-slate-100">
+               <p className="text-slate-500">No hay instructores asignados a esta disciplina.</p>
+             </div>
+          )}
         </div>
       </main>
     </div>
   );
 }
+

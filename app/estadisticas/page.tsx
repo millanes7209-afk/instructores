@@ -1,16 +1,9 @@
 import { query } from '@/lib/db';
-import { disciplinas, instructores, type Instructor } from '@/lib/data';
 
 export const dynamic = 'force-dynamic';
 
-type StatRow = {
-  instructor_id: number;
-  avg_general: string;
-  total_answers: string;
-};
-
 export default async function EstadisticasIndex() {
-  const { rows } = await query<StatRow>(`
+  const { rows: stats } = await query(`
     SELECT
       instructor_id,
       ROUND(AVG(calificacion_instructor)::numeric, 1)::text AS avg_general,
@@ -19,8 +12,16 @@ export default async function EstadisticasIndex() {
     GROUP BY instructor_id
   `);
 
+  const { rows: disciplinas } = await query('SELECT * FROM disciplinas ORDER BY nombre ASC');
+  
+  const { rows: instructorRelations } = await query(`
+    SELECT i.*, id.disciplina_id
+    FROM instructores i
+    JOIN instructor_disciplinas id ON i.id = id.instructor_id
+  `);
+
   const byInstructor = new Map(
-    rows.map((row) => [
+    stats.map((row: any) => [
       Number(row.instructor_id),
       {
         promedio_general: Number(row.avg_general),
@@ -29,20 +30,23 @@ export default async function EstadisticasIndex() {
     ])
   );
 
-  const disciplinasConStats = Object.entries(disciplinas).map(([key, disciplina]) => {
-    const instructoresDisciplina = Object.values(instructores).filter(
-      (instructor) => instructor.especialidad === disciplina.nombre
+  const disciplinasConStats = disciplinas.map((disciplina: any) => {
+    const instructoresDisciplina = instructorRelations.filter(
+      (rel: any) => rel.disciplina_id === disciplina.id
     );
 
     let totalRespuestas = 0;
     let promedioGeneral = 0;
-    const instructoresConStats: Array<Instructor & { promedio_general: number }> = [];
+    const instructoresConStats: any[] = [];
 
-    instructoresDisciplina.forEach((instructor) => {
-      const stats = byInstructor.get(instructor.id);
-      if (stats) {
-        instructoresConStats.push({ ...instructor, promedio_general: stats.promedio_general });
-        totalRespuestas += stats.total_respuestas;
+    instructoresDisciplina.forEach((instructor: any) => {
+      const instructorStats = byInstructor.get(instructor.id);
+      if (instructorStats) {
+        // Prevent duplicate pushes if an instructor is somehow duplicated in relations
+        if (!instructoresConStats.find(i => i.id === instructor.id)) {
+          instructoresConStats.push({ ...instructor, promedio_general: instructorStats.promedio_general });
+          totalRespuestas += instructorStats.total_respuestas;
+        }
       }
     });
 
@@ -53,7 +57,7 @@ export default async function EstadisticasIndex() {
     }
 
     return {
-      key,
+      key: disciplina.slug,
       disciplina,
       instructoresConStats,
       totalRespuestas,
@@ -96,7 +100,7 @@ export default async function EstadisticasIndex() {
               </div>
               
               <div className="space-y-2 mb-4 border-t border-slate-100 pt-4">
-                {instructoresConStats.slice(0, 2).map((instructor) => (
+                {instructoresConStats.slice(0, 2).map((instructor: any) => (
                   <div key={instructor.id} className="text-sm">
                     <div className="flex justify-between">
                       <span className="text-gray-600">{instructor.nombre}:</span>
@@ -116,3 +120,4 @@ export default async function EstadisticasIndex() {
     </div>
   );
 }
+
