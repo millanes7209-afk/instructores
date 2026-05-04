@@ -1,10 +1,7 @@
 import { NextResponse } from 'next/server';
-import { randomUUID } from 'crypto';
-import { ensureSurveyTable, query } from '@/lib/db';
+import { query } from '@/lib/db';
 
 type Categoria = 'puntualidad' | 'satisfaccion' | 'calificacion_instructor';
-
-const CATEGORIAS: Categoria[] = ['puntualidad', 'satisfaccion', 'calificacion_instructor'];
 
 export async function POST(request: Request) {
   try {
@@ -20,29 +17,28 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'answers invalido' }, { status: 400 });
     }
 
-    for (const categoria of CATEGORIAS) {
-      const current = answers[categoria];
-      const rating = Number(current?.rating);
-      if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
-        return NextResponse.json({ error: `rating invalido para ${categoria}` }, { status: 400 });
-      }
+    // Validar que tengamos las 3 calificaciones
+    const p = Number(answers.puntualidad?.rating);
+    const s = Number(answers.satisfaccion?.rating);
+    const c = Number(answers.calificacion_instructor?.rating);
+    const comentario = answers.calificacion_instructor?.comment || '';
+
+    if ([p, s, c].some(r => !Number.isInteger(r) || r < 1 || r > 5)) {
+      return NextResponse.json({ error: 'Calificaciones invalidas' }, { status: 400 });
     }
 
-    const surveyId = randomUUID();
+    // Insertar en la nueva tabla 'evaluaciones' (una sola fila)
+    await query(
+      `
+      INSERT INTO evaluaciones (instructor_id, puntualidad, satisfaccion, calificacion_instructor, comentario)
+      VALUES ($1, $2, $3, $4, $5)
+    `,
+      [instructorId, p, s, c, comentario]
+    );
 
-    for (const categoria of CATEGORIAS) {
-      const current = answers[categoria]!;
-      await query(
-        `
-        INSERT INTO survey_responses (survey_id, instructor_id, categoria, rating, comentario)
-        VALUES ($1, $2, $3, $4, $5)
-      `,
-        [surveyId, instructorId, categoria, current.rating, current.comment ?? null]
-      );
-    }
-
-    return NextResponse.json({ ok: true, surveyId });
-  } catch {
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    console.error('Error saving survey:', error);
     return NextResponse.json({ error: 'No se pudo guardar la encuesta' }, { status: 500 });
   }
 }
