@@ -62,6 +62,9 @@ export default function ChartsClient({
   horarios: any[];
 }) {
   const [selectedInstructorId, setSelectedInstructorId] = useState<number | null>(null);
+  const [selectedDisciplinaId, setSelectedDisciplinaId] = useState<string>('');
+  const [selectedSala, setSelectedSala] = useState<string>('');
+  const [selectedTimeRange, setSelectedTimeRange] = useState<'week' | 'month' | 'all'>('week');
 
   const salas = ['Sala 1', 'Sala 2', 'Sala 3', 'Sala 4', 'Sala 5'];
 
