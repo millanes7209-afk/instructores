@@ -67,13 +67,20 @@ export default function ChartsClient({
 
   // Filtrar evaluaciones según los criterios seleccionados y el rango de tiempo
   const filteredEvaluaciones = evaluaciones.filter(e => {
-    const matchDisciplina = selectedDisciplinaId ? e.disciplina_nombre?.toLowerCase() === disciplinas.find(d => d.id.toString() === selectedDisciplinaId)?.nombre.toLowerCase() : true;
+    if (!e) return false;
+    
+    const matchDisciplina = selectedDisciplinaId 
+      ? e.disciplina_nombre?.toLowerCase() === disciplinas.find(d => d.id.toString() === selectedDisciplinaId)?.nombre.toLowerCase() 
+      : true;
+      
     const matchSala = selectedSala ? e.sala === selectedSala : true;
     
-    // Filtro de tiempo
+    // Filtro de tiempo (con seguridad para fechas nulas)
     if (selectedTimeRange === 'all') return matchDisciplina && matchSala;
     
-    const voteDate = new Date(e.created_at);
+    const voteDate = e.created_at ? new Date(e.created_at) : null;
+    if (!voteDate || isNaN(voteDate.getTime())) return false;
+
     const now = new Date();
     const diffDays = (now.getTime() - voteDate.getTime()) / (1000 * 3600 * 24);
     
@@ -84,20 +91,20 @@ export default function ChartsClient({
 
   // Instructores que tienen evaluaciones en los filtros actuales
   const instructoresActivos = instructores.filter(i => 
-    filteredEvaluaciones.some(e => e.instructor_id === i.id)
+    filteredEvaluaciones.some(e => Number(e.instructor_id) === Number(i.id))
   );
 
-  const getInstructorStats = (instructorId: string) => {
-    const instructorEvaluaciones = filteredEvaluaciones.filter(e => e.instructor_id === instructorId);
+  const getInstructorStats = (instructorId: number) => {
+    const instructorEvaluaciones = filteredEvaluaciones.filter(e => Number(e.instructor_id) === Number(instructorId));
     
     if (instructorEvaluaciones.length === 0) {
       return { total: 0, puntualidad: 0, satisfaccion: 0, calificacion: 0 };
     }
 
     const total = instructorEvaluaciones.length;
-    const puntualidad = instructorEvaluaciones.reduce((sum, e) => sum + Number(e.puntualidad), 0) / total;
-    const satisfaccion = instructorEvaluaciones.reduce((sum, e) => sum + Number(e.satisfaccion), 0) / total;
-    const calificacion = instructorEvaluaciones.reduce((sum, e) => sum + Number(e.calificacion_instructor), 0) / total;
+    const puntualidad = instructorEvaluaciones.reduce((sum, e) => sum + Number(e.puntualidad || 0), 0) / total;
+    const satisfaccion = instructorEvaluaciones.reduce((sum, e) => sum + Number(e.satisfaccion || 0), 0) / total;
+    const calificacion = instructorEvaluaciones.reduce((sum, e) => sum + Number(e.calificacion_instructor || 0), 0) / total;
 
     return {
       total,
@@ -108,22 +115,22 @@ export default function ChartsClient({
   };
 
   // Obtener rendimiento por cada clase específica (horario)
-  const getClassBreakdown = (instructorId: string) => {
-    const instructorHorarios = horarios.filter(h => h.instructor_id === instructorId);
+  const getClassBreakdown = (instructorId: number) => {
+    const instructorHorarios = (horarios || []).filter(h => Number(h.instructor_id) === Number(instructorId));
     
     return instructorHorarios.map(h => {
-      const classEvs = filteredEvaluaciones.filter(e => e.horario_id === h.id);
+      const classEvs = filteredEvaluaciones.filter(e => Number(e.horario_id) === Number(h.id));
       const total = classEvs.length;
       const avg = total > 0 
-        ? (classEvs.reduce((sum, e) => sum + (Number(e.puntualidad) + Number(e.satisfaccion) + Number(e.calificacion_instructor))/3, 0) / total).toFixed(1)
+        ? (classEvs.reduce((sum, e) => sum + (Number(e.puntualidad || 0) + Number(e.satisfaccion || 0) + Number(e.calificacion_instructor || 0))/3, 0) / total).toFixed(1)
         : 'N/A';
       
       return { ...h, total, avg };
-    }).filter(h => h.total > 0 || !selectedSala); // Mostrar solo si hay votos o no hay filtro de sala
+    }).filter(h => h.total > 0 || !selectedSala);
   };
 
-  const createChartData = (instructorId: string) => {
-    const instructorEvs = filteredEvaluaciones.filter(e => e.instructor_id === instructorId);
+  const createChartData = (instructorId: number) => {
+    const instructorEvs = filteredEvaluaciones.filter(e => Number(e.instructor_id) === Number(instructorId));
     return {
       satisfaccion: {
         labels: ['Muy Insatisfecho', 'Insatisfecho', 'Neutral', 'Satisfecho', 'Muy Satisfecho'],
@@ -172,7 +179,11 @@ export default function ChartsClient({
     };
   };
 
-  const diaNombre = (num: number) => ['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom'][num-1];
+  const diaNombre = (num: any) => {
+    const n = Number(num);
+    if (isNaN(n) || n < 1 || n > 7) return 'N/A';
+    return ['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom'][n-1];
+  };
 
   return (
     <div className="w-full">
@@ -343,7 +354,7 @@ export default function ChartsClient({
                         <tr key={idx} className="hover:bg-white/50 transition-colors">
                           <td className="py-3 px-2 font-bold text-slate-700">{h.sala}</td>
                           <td className="py-3 px-2 text-slate-600">{h.disciplina_nombre}</td>
-                          <td className="py-3 px-2 text-slate-500">{diaNombre(h.dia_semana)} {h.hora_inicio.substring(0, 5)}</td>
+                          <td className="py-3 px-2 text-slate-500">{diaNombre(h.dia_semana)} {h.hora_inicio ? String(h.hora_inicio).substring(0, 5) : 'N/A'}</td>
                           <td className="py-3 px-2 text-center">
                             <span className="bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full font-bold text-[10px]">
                               {h.total}
