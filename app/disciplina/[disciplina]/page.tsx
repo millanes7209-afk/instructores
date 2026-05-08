@@ -19,10 +19,10 @@ export default async function DisciplinaShow({ params }: PageProps) {
   }
 
   const resInst = await query(`
-    SELECT i.* 
+    SELECT DISTINCT i.* 
     FROM instructores i
-    JOIN instructor_disciplinas id ON i.id = id.instructor_id
-    WHERE id.disciplina_id = $1
+    JOIN horarios h ON i.id = h.instructor_id
+    WHERE h.disciplina_id = $1
   `, [disciplina.id]);
   const instructoresDisciplina = resInst.rows as any[];
 
