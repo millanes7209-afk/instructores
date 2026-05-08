@@ -53,12 +53,11 @@ export default function ChartsClient({
   const [selectedInstructorId, setSelectedInstructorId] = useState<number | null>(null);
   const [selectedDisciplinaId, setSelectedDisciplinaId] = useState<string>('');
   const [selectedSala, setSelectedSala] = useState<string>('');
-  const [selectedTimeRange, setSelectedTimeRange] = useState<'week' | 'month' | 'all'>('week');
+  const [selectedTimeRange, setSelectedTimeRange] = useState<'week' | 'month' | 'all'>('all');
   const [selectedHorarioId, setSelectedHorarioId] = useState<number | null>(null);
 
   const salas = ['Sala 1', 'Sala 2', 'Sala 3', 'Sala 4', 'Sala 5'];
 
-  // 1. Filtrar instructores por disciplina
   const instructoresDeDisciplina = useMemo(() => {
     if (!selectedDisciplinaId) return [];
     const disciplinaNombre = disciplinas.find(d => d.id.toString() === selectedDisciplinaId)?.nombre.toLowerCase();
@@ -67,26 +66,19 @@ export default function ChartsClient({
     );
   }, [selectedDisciplinaId, instructores, horarios, disciplinas]);
 
-  // 2. Filtrar evaluaciones
   const filteredEvaluaciones = useMemo(() => {
     return evaluaciones.filter(e => {
       if (!e) return false;
       
-      // Filtro de disciplina e instructor
       const matchDisciplina = selectedDisciplinaId
         ? e.disciplina_nombre?.toLowerCase() === disciplinas.find(d => d.id.toString() === selectedDisciplinaId)?.nombre.toLowerCase()
         : true;
       const matchInstructor = selectedInstructorId ? Number(e.instructor_id) === selectedInstructorId : true;
-      
-      // Filtro de clase específica (SI se ha seleccionado una)
       const matchHorario = selectedHorarioId ? Number(e.horario_id) === selectedHorarioId : true;
-
-      // Filtro de sala (desde el selector manual)
       const matchSala = selectedSala ? e.sala === selectedSala : true;
 
       if (!matchDisciplina || !matchInstructor || !matchHorario || !matchSala) return false;
 
-      // Si el rango es 'Todo', no aplicamos filtro de tiempo adicional
       if (selectedTimeRange === 'all') return true;
 
       const voteDate = e.created_at ? new Date(e.created_at) : null;
@@ -115,7 +107,7 @@ export default function ChartsClient({
       (!disciplinaNombre || h.disciplina_nombre.toLowerCase() === disciplinaNombre)
     );
     return instHorarios.map(h => {
-      const classEvs = filteredEvaluaciones.filter(e => Number(e.horario_id) === Number(h.id));
+      const classEvs = evaluaciones.filter(e => Number(e.horario_id) === Number(h.id));
       const total = classEvs.length;
       return {
         ...h,
@@ -184,8 +176,8 @@ export default function ChartsClient({
   return (
     <div className="w-full max-w-6xl mx-auto p-4">
       <div className="text-center mb-10">
-        <h1 className="text-4xl font-black text-slate-900 mb-2">Estadísticas</h1>
-        <p className="text-slate-500">Panel de control y rendimiento de instructores</p>
+        <h1 className="text-4xl font-black text-slate-900 mb-2">Análisis de Rendimiento</h1>
+        <p className="text-slate-500">Visualiza el impacto de cada clase y turno</p>
       </div>
 
       {(selectedDisciplinaId || selectedInstructorId) && (
@@ -207,17 +199,16 @@ export default function ChartsClient({
                   key={r}
                   onClick={() => {
                     setSelectedTimeRange(r);
-                    if (r !== 'all') setSelectedHorarioId(null); // Reset class selection on time filter
+                    if (r !== 'all') setSelectedHorarioId(null);
                   }}
                   className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${
                     selectedTimeRange === r ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400'
                   }`}
                 >
-                  {r === 'week' ? 'Semana' : r === 'month' ? 'Mes' : 'Histórico'}
+                  {r === 'week' ? 'Semana' : r === 'month' ? 'Mes' : 'Por Clases'}
                 </button>
               ))}
             </div>
-            
             {!selectedHorarioId && (
               <select
                 className="bg-slate-100 border-none rounded-2xl px-4 py-2 text-xs font-bold text-slate-700 outline-none"
@@ -274,22 +265,27 @@ export default function ChartsClient({
         {selectedInstructorId && selectedTimeRange === 'all' && !selectedHorarioId && (
           <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-8">
             <div className="text-center mb-8">
-              <h3 className="text-2xl font-black text-slate-900">Selecciona una Clase o Turno</h3>
-              <p className="text-slate-500">Para ver estadísticas detalladas, elige una de las sesiones de {selectedInstructor?.nombre}</p>
+              <h3 className="text-2xl font-black text-slate-900">Sesiones Semanales de {selectedInstructor?.nombre}</h3>
+              <p className="text-slate-500">Selecciona una clase específica para ver su rendimiento detallado</p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {getClassBreakdown(selectedInstructorId!).map((h) => (
                 <button
                   key={h.id}
                   onClick={() => setSelectedHorarioId(h.id)}
-                  className="p-6 bg-white border border-slate-100 rounded-3xl shadow-sm hover:shadow-xl hover:border-blue-500 transition-all flex items-center justify-between group"
+                  className="p-8 bg-white border border-slate-100 rounded-[2rem] shadow-sm hover:shadow-2xl hover:border-blue-500 transition-all flex items-center justify-between group active:scale-95"
                 >
                   <div className="text-left">
-                    <div className="text-[10px] font-black text-blue-500 uppercase tracking-widest">{h.sala} • {Number(h.hora_inicio.substring(0,2)) < 13 ? 'Mañana' : 'Tarde'}</div>
-                    <div className="text-lg font-bold text-slate-800">{diaNombre(h.dia_semana)} {h.hora_inicio.substring(0,5)}</div>
+                    <div className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1">{h.sala} • {Number(h.hora_inicio.substring(0,2)) < 13 ? 'Mañana' : 'Tarde'}</div>
+                    <div className="text-xl font-black text-slate-800">{diaNombre(h.dia_semana)} {h.hora_inicio.substring(0,5)}</div>
+                    <div className="flex gap-2 mt-2">
+                       <span className="text-[9px] font-bold bg-slate-100 text-slate-400 px-2 py-0.5 rounded-full uppercase">Punt: {h.punt}</span>
+                       <span className="text-[9px] font-bold bg-slate-100 text-slate-400 px-2 py-0.5 rounded-full uppercase">Sat: {h.sat}</span>
+                    </div>
                   </div>
-                  <div className="bg-slate-50 px-4 py-2 rounded-2xl group-hover:bg-blue-600 group-hover:text-white transition-all">
-                    <span className="font-black">{h.total}</span> <span className="text-[10px] uppercase font-bold">votos</span>
+                  <div className="bg-slate-50 px-5 py-3 rounded-2xl group-hover:bg-blue-600 group-hover:text-white transition-all text-center">
+                    <div className="text-2xl font-black leading-none">{h.total}</div>
+                    <div className="text-[8px] uppercase font-bold mt-1">votos</div>
                   </div>
                 </button>
               ))}
@@ -313,7 +309,7 @@ export default function ChartsClient({
                       <div>
                         <h2 className="text-3xl font-black text-slate-900">{selectedInstructor.nombre}</h2>
                         <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">
-                          {selectedDisciplina?.nombre} • {stats.total} evaluaciones
+                          {selectedTimeRange === 'week' ? 'Reporte Semanal' : selectedTimeRange === 'month' ? 'Reporte Mensual' : 'Reporte de Sesión'} • {stats.total} votos
                         </p>
                       </div>
                     </div>
