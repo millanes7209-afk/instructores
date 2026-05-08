@@ -61,40 +61,46 @@ export default function ChartsClient({
   evaluaciones: any[];
   horarios: any[];
 }) {
-  const [selectedTimeRange, setSelectedTimeRange] = useState<'week' | 'month' | 'all'>('week');
-  const [selectedDisciplinaId, setSelectedDisciplinaId] = useState<string>('');
-  const [selectedSala, setSelectedSala] = useState<string>('');
+  const [selectedInstructorId, setSelectedInstructorId] = useState<number | null>(null);
 
   const salas = ['Sala 1', 'Sala 2', 'Sala 3', 'Sala 4', 'Sala 5'];
 
+  // Filtrar instructores por disciplina
+  const instructoresDeDisciplina = useMemo(() => {
+    if (!selectedDisciplinaId) return [];
+    const disciplinaNombre = disciplinas.find(d => d.id.toString() === selectedDisciplinaId)?.nombre.toLowerCase();
+    
+    // Un instructor pertenece a una disciplina si tiene un horario programado para ella
+    return instructores.filter(i => 
+      horarios.some(h => h.instructor_id === i.id && h.disciplina_nombre.toLowerCase() === disciplinaNombre)
+    );
+  }, [selectedDisciplinaId, instructores, horarios, disciplinas]);
+
   // Filtrar evaluaciones según los criterios seleccionados y el rango de tiempo
-  const filteredEvaluaciones = evaluaciones.filter(e => {
-    if (!e) return false;
-    
-    const matchDisciplina = selectedDisciplinaId 
-      ? e.disciplina_nombre?.toLowerCase() === disciplinas.find(d => d.id.toString() === selectedDisciplinaId)?.nombre.toLowerCase() 
-      : true;
+  const filteredEvaluaciones = useMemo(() => {
+    return evaluaciones.filter(e => {
+      if (!e) return false;
       
-    const matchSala = selectedSala ? e.sala === selectedSala : true;
-    
-    // Filtro de tiempo (con seguridad para fechas nulas)
-    if (selectedTimeRange === 'all') return matchDisciplina && matchSala;
-    
-    const voteDate = e.created_at ? new Date(e.created_at) : null;
-    if (!voteDate || isNaN(voteDate.getTime())) return false;
+      const matchDisciplina = selectedDisciplinaId 
+        ? e.disciplina_nombre?.toLowerCase() === disciplinas.find(d => d.id.toString() === selectedDisciplinaId)?.nombre.toLowerCase() 
+        : true;
+        
+      const matchSala = selectedSala ? e.sala === selectedSala : true;
+      const matchInstructor = selectedInstructorId ? Number(e.instructor_id) === selectedInstructorId : true;
+      
+      if (selectedTimeRange === 'all') return matchDisciplina && matchSala && matchInstructor;
+      
+      const voteDate = e.created_at ? new Date(e.created_at) : null;
+      if (!voteDate || isNaN(voteDate.getTime())) return false;
 
-    const now = new Date();
-    const diffDays = (now.getTime() - voteDate.getTime()) / (1000 * 3600 * 24);
-    
-    const matchTime = selectedTimeRange === 'week' ? diffDays <= 7 : diffDays <= 30;
-    
-    return matchDisciplina && matchSala && matchTime;
-  });
-
-  // Instructores que tienen evaluaciones en los filtros actuales
-  const instructoresActivos = instructores.filter(i => 
-    filteredEvaluaciones.some(e => Number(e.instructor_id) === Number(i.id))
-  );
+      const now = new Date();
+      const diffDays = (now.getTime() - voteDate.getTime()) / (1000 * 3600 * 24);
+      
+      const matchTime = selectedTimeRange === 'week' ? diffDays <= 7 : diffDays <= 30;
+      
+      return matchDisciplina && matchSala && matchTime && matchInstructor;
+    });
+  }, [evaluaciones, selectedDisciplinaId, selectedSala, selectedInstructorId, selectedTimeRange, disciplinas]);
 
   const getInstructorStats = (instructorId: number) => {
     const instructorEvaluaciones = filteredEvaluaciones.filter(e => Number(e.instructor_id) === Number(instructorId));
@@ -116,9 +122,12 @@ export default function ChartsClient({
     };
   };
 
-  // Obtener rendimiento por cada clase específica (horario)
   const getClassBreakdown = (instructorId: number) => {
-    const instructorHorarios = (horarios || []).filter(h => Number(h.instructor_id) === Number(instructorId));
+    const disciplinaNombre = disciplinas.find(d => d.id.toString() === selectedDisciplinaId)?.nombre.toLowerCase();
+    const instructorHorarios = (horarios || []).filter(h => 
+      Number(h.instructor_id) === Number(instructorId) && 
+      (!disciplinaNombre || h.disciplina_nombre.toLowerCase() === disciplinaNombre)
+    );
     
     return instructorHorarios.map(h => {
       const classEvs = filteredEvaluaciones.filter(e => Number(e.horario_id) === Number(h.id));
@@ -128,7 +137,7 @@ export default function ChartsClient({
         : 'N/A';
       
       return { ...h, total, avg };
-    }).filter(h => h.total > 0 || !selectedSala);
+    });
   };
 
   const createChartData = (instructorId: number) => {
@@ -187,6 +196,8 @@ export default function ChartsClient({
     return ['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom'][n-1];
   };
 
+  const selectedInstructor = instructores.find(i => i.id === selectedInstructorId);
+
   return (
     <div className="w-full">
       <div className="text-center mb-8">
@@ -194,7 +205,7 @@ export default function ChartsClient({
           Dashboard de Rendimiento
         </h1>
         <p className="text-slate-500 mb-8 max-w-xl mx-auto">
-          Estadísticas detalladas por clase, semana y mes.
+          Gestiona y visualiza el feedback por disciplina e instructor.
         </p>
 
         <div className="flex flex-col md:flex-row gap-4 justify-center items-center max-w-5xl mx-auto bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
@@ -217,9 +228,27 @@ export default function ChartsClient({
             </div>
           </div>
 
-          {/* Filtro por Sala */}
+          {/* Filtro por Disciplina */}
+          <div className="w-full md:w-1/3">
+            <label className="block text-xs font-bold text-slate-400 uppercase mb-2 text-left ml-1">1. Selecciona Disciplina</label>
+            <select 
+              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none text-slate-700 font-medium text-sm focus:ring-2 focus:ring-blue-500/20"
+              onChange={(e) => {
+                setSelectedDisciplinaId(e.target.value);
+                setSelectedInstructorId(null); // Reset instructor when discipline changes
+              }}
+              value={selectedDisciplinaId}
+            >
+              <option value="">Selecciona una Disciplina</option>
+              {disciplinas.map((d) => (
+                <option key={d.id} value={d.id}>{d.nombre}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Filtro por Sala (Opcional) */}
           <div className="w-full md:w-1/4">
-            <label className="block text-xs font-bold text-slate-400 uppercase mb-2 text-left ml-1">Sala</label>
+            <label className="block text-xs font-bold text-slate-400 uppercase mb-2 text-left ml-1">Filtrar por Sala</label>
             <select 
               className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none text-slate-700 font-medium text-sm"
               onChange={(e) => setSelectedSala(e.target.value)}
@@ -231,151 +260,190 @@ export default function ChartsClient({
               ))}
             </select>
           </div>
-
-          {/* Filtro por Disciplina */}
-          <div className="w-full md:w-1/4">
-            <label className="block text-xs font-bold text-slate-400 uppercase mb-2 text-left ml-1">Disciplina</label>
-            <select 
-              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none text-slate-700 font-medium text-sm"
-              onChange={(e) => setSelectedDisciplinaId(e.target.value)}
-              value={selectedDisciplinaId}
-            >
-              <option value="">Todas las Disciplinas</option>
-              {disciplinas.map((d) => (
-                <option key={d.id} value={d.id}>{d.nombre}</option>
-              ))}
-            </select>
-          </div>
         </div>
       </div>
 
-      <div className="space-y-12">
-        {instructoresActivos.map((instructor) => {
-          const stats = getInstructorStats(instructor.id);
-          const chartData = createChartData(instructor.id);
-          const classBreakdown = getClassBreakdown(instructor.id);
-
-          return (
-            <div key={instructor.id} className="premium-card p-6 md:p-8">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 pb-6 border-b border-slate-100">
-                <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 bg-gradient-to-tr from-blue-600 to-blue-400 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/20">
-                    <span className="text-2xl font-black text-white">{instructor.iniciales}</span>
+      <div className="space-y-8">
+        {/* PASO 2: LISTA DE INSTRUCTORES */}
+        {selectedDisciplinaId && (
+          <div className="max-w-5xl mx-auto">
+            <h4 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4 ml-1">2. Selecciona Instructor</h4>
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              {instructoresDeDisciplina.map((inst) => (
+                <button
+                  key={inst.id}
+                  onClick={() => setSelectedInstructorId(inst.id)}
+                  className={`p-4 rounded-2xl border transition-all text-center group ${
+                    selectedInstructorId === inst.id 
+                    ? 'bg-blue-600 border-blue-600 shadow-lg shadow-blue-500/30' 
+                    : 'bg-white border-slate-200 hover:border-blue-400 hover:shadow-md'
+                  }`}
+                >
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-2 font-bold ${
+                    selectedInstructorId === inst.id ? 'bg-white/20 text-white' : 'bg-blue-50 text-blue-600'
+                  }`}>
+                    {inst.iniciales}
                   </div>
-                  <div>
-                    <h3 className="text-2xl font-bold text-slate-900">{instructor.nombre}</h3>
-                    <p className="text-slate-500 font-medium">
-                      {stats.total} evaluaciones en este periodo
-                    </p>
-                  </div>
+                  <span className={`text-xs font-bold block truncate ${
+                    selectedInstructorId === inst.id ? 'text-white' : 'text-slate-700'
+                  }`}>
+                    {inst.nombre}
+                  </span>
+                </button>
+              ))}
+              {instructoresDeDisciplina.length === 0 && (
+                <div className="col-span-full py-8 text-center text-slate-400 border-2 border-dashed border-slate-200 rounded-2xl">
+                  No hay instructores programados para esta disciplina.
                 </div>
-                <div className="bg-blue-50 px-6 py-3 rounded-2xl border border-blue-100 text-center">
-                  <p className="text-xs font-bold text-blue-400 uppercase tracking-widest mb-1">Promedio General</p>
-                  <p className="text-3xl font-black text-blue-600">{((stats.puntualidad + stats.satisfaccion + stats.calificacion) / 3).toFixed(1)}<span className="text-lg text-blue-300">/5.0</span></p>
-                </div>
-              </div>
+              )}
+            </div>
+          </div>
+        )}
 
-              <div className="grid md:grid-cols-3 gap-8 mb-10">
-                {/* 1. Puntualidad */}
-                <div>
-                  <h5 className="text-center font-bold text-slate-700 mb-4 text-sm uppercase tracking-wide">Puntualidad</h5>
-                  <div className="h-48">
-                    <Line data={chartData.puntualidad} options={{
-                      responsive: true,
-                      maintainAspectRatio: false,
-                      plugins: { legend: { display: false } },
-                      scales: {
-                        y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 10 } } },
-                        x: { ticks: { font: { size: 10 } } }
-                      }
-                    }} />
-                  </div>
-                </div>
+        {/* PASO 3: ESTADÍSTICAS DEL INSTRUCTOR SELECCIONADO */}
+        {selectedInstructor && (
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            {(() => {
+              const stats = getInstructorStats(selectedInstructor.id);
+              const chartData = createChartData(selectedInstructor.id);
+              const classBreakdown = getClassBreakdown(selectedInstructor.id);
 
-                {/* 2. Satisfacción */}
-                <div>
-                  <h5 className="text-center font-bold text-slate-700 mb-4 text-sm uppercase tracking-wide">Satisfacción</h5>
-                  <div className="h-40 relative flex items-end justify-center">
-                    <Doughnut 
-                      data={chartData.satisfaccion} 
-                      plugins={[gaugeNeedle]}
-                      options={{
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: { 
-                          legend: { display: false },
-                          tooltip: { enabled: false },
-                          // @ts-ignore
-                          gaugeNeedle: { average: stats.satisfaccion || 1 }
-                        }
-                      }} 
-                    />
-                    <div className="absolute bottom-0 text-center w-full">
-                      <span className="text-2xl font-black text-slate-800">{stats.satisfaccion}</span><span className="text-slate-400">/5</span>
+              return (
+                <div className="premium-card p-6 md:p-8 border-t-4 border-t-blue-600">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 pb-6 border-b border-slate-100">
+                    <div className="flex items-center gap-4">
+                      <div className="w-16 h-16 bg-gradient-to-tr from-blue-600 to-blue-400 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/20">
+                        <span className="text-2xl font-black text-white">{selectedInstructor.iniciales}</span>
+                      </div>
+                      <div>
+                        <h3 className="text-2xl font-bold text-slate-900">{selectedInstructor.nombre}</h3>
+                        <p className="text-slate-500 font-medium">
+                          {stats.total} evaluaciones en el periodo seleccionado
+                        </p>
+                      </div>
+                    </div>
+                    <div className="bg-blue-50 px-6 py-3 rounded-2xl border border-blue-100 text-center">
+                      <p className="text-xs font-bold text-blue-400 uppercase tracking-widest mb-1">Promedio General</p>
+                      <p className="text-3xl font-black text-blue-600">{((stats.puntualidad + stats.satisfaccion + stats.calificacion) / 3).toFixed(1)}<span className="text-lg text-blue-300">/5.0</span></p>
+                    </div>
+                  </div>
+
+                  <div className="grid md:grid-cols-3 gap-8 mb-10">
+                    {/* 1. Puntualidad */}
+                    <div>
+                      <h5 className="text-center font-bold text-slate-700 mb-4 text-sm uppercase tracking-wide">Puntualidad</h5>
+                      <div className="h-48">
+                        <Line data={chartData.puntualidad} options={{
+                          responsive: true,
+                          maintainAspectRatio: false,
+                          plugins: { legend: { display: false } },
+                          scales: {
+                            y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 10 } } },
+                            x: { ticks: { font: { size: 10 } } }
+                          }
+                        }} />
+                      </div>
+                    </div>
+
+                    {/* 2. Satisfacción */}
+                    <div>
+                      <h5 className="text-center font-bold text-slate-700 mb-4 text-sm uppercase tracking-wide">Satisfacción</h5>
+                      <div className="h-40 relative flex items-end justify-center">
+                        <Doughnut 
+                          data={chartData.satisfaccion} 
+                          plugins={[gaugeNeedle]}
+                          options={{
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { 
+                              legend: { display: false },
+                              tooltip: { enabled: false },
+                              // @ts-ignore
+                              gaugeNeedle: { average: stats.satisfaccion || 1 }
+                            }
+                          }} 
+                        />
+                        <div className="absolute bottom-0 text-center w-full">
+                          <span className="text-2xl font-black text-slate-800">{stats.satisfaccion}</span><span className="text-slate-400">/5</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 3. Calificación General */}
+                    <div>
+                      <h5 className="text-center font-bold text-slate-700 mb-4 text-sm uppercase tracking-wide">Estrellas</h5>
+                      <div className="h-48">
+                        <Pie data={chartData.calificacion} options={{
+                          responsive: true,
+                          maintainAspectRatio: false,
+                          plugins: { 
+                            legend: { 
+                              position: 'bottom',
+                              labels: { usePointStyle: true, font: { size: 9 }, padding: 10 }
+                            } 
+                          }
+                        }} />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* TABLA DE DESGLOSE POR CLASE */}
+                  <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100">
+                    <h6 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                      <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                      Rendimiento por Clase (Source: Horarios)
+                    </h6>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm text-left">
+                        <thead>
+                          <tr className="text-slate-400 font-bold uppercase text-[10px] tracking-widest border-b border-slate-200">
+                            <th className="pb-3 px-2">Sala</th>
+                            <th className="pb-3 px-2">Turno</th>
+                            <th className="pb-3 px-2">Horario</th>
+                            <th className="pb-3 px-2 text-center">Votos Recibidos</th>
+                            <th className="pb-3 px-2 text-right">Nota Promedio</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {classBreakdown.map((h, idx) => (
+                            <tr key={idx} className="hover:bg-white/50 transition-colors">
+                              <td className="py-3 px-2 font-bold text-slate-700">{h.sala}</td>
+                              <td className="py-3 px-2 text-slate-600">{Number(h.hora_inicio.substring(0,2)) < 13 ? 'Mañana' : 'Tarde'}</td>
+                              <td className="py-3 px-2 text-slate-500">{diaNombre(h.dia_semana)} {h.hora_inicio ? String(h.hora_inicio).substring(0, 5) : 'N/A'}</td>
+                              <td className="py-3 px-2 text-center">
+                                <span className="bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full font-bold text-[10px]">
+                                  {h.total}
+                                </span>
+                              </td>
+                              <td className="py-3 px-2 text-right">
+                                <span className={`font-black ${Number(h.avg) >= 4 ? 'text-green-500' : Number(h.avg) >= 3 ? 'text-yellow-500' : 'text-red-500'}`}>
+                                  {h.avg}{h.avg !== 'N/A' && '/5.0'}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
                   </div>
                 </div>
+              );
+            })()}
+          </div>
+        )}
 
-                {/* 3. Calificación General */}
-                <div>
-                  <h5 className="text-center font-bold text-slate-700 mb-4 text-sm uppercase tracking-wide">Estrellas</h5>
-                  <div className="h-48">
-                    <Pie data={chartData.calificacion} options={{
-                      responsive: true,
-                      maintainAspectRatio: false,
-                      plugins: { 
-                        legend: { 
-                          position: 'bottom',
-                          labels: { usePointStyle: true, font: { size: 9 }, padding: 10 }
-                        } 
-                      }
-                    }} />
-                  </div>
-                </div>
-              </div>
-
-              {/* TABLA DE DESGLOSE POR CLASE */}
-              <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100">
-                <h6 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
-                  <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                  Desglose por Clase Específica
-                </h6>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm text-left">
-                    <thead>
-                      <tr className="text-slate-400 font-bold uppercase text-[10px] tracking-widest border-b border-slate-200">
-                        <th className="pb-3 px-2">Sala</th>
-                        <th className="pb-3 px-2">Disciplina</th>
-                        <th className="pb-3 px-2">Horario</th>
-                        <th className="pb-3 px-2 text-center">Votos</th>
-                        <th className="pb-3 px-2 text-right">Rendimiento</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {classBreakdown.map((h, idx) => (
-                        <tr key={idx} className="hover:bg-white/50 transition-colors">
-                          <td className="py-3 px-2 font-bold text-slate-700">{h.sala}</td>
-                          <td className="py-3 px-2 text-slate-600">{h.disciplina_nombre}</td>
-                          <td className="py-3 px-2 text-slate-500">{diaNombre(h.dia_semana)} {h.hora_inicio ? String(h.hora_inicio).substring(0, 5) : 'N/A'}</td>
-                          <td className="py-3 px-2 text-center">
-                            <span className="bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full font-bold text-[10px]">
-                              {h.total}
-                            </span>
-                          </td>
-                          <td className="py-3 px-2 text-right">
-                            <span className={`font-black ${Number(h.avg) >= 4 ? 'text-green-500' : Number(h.avg) >= 3 ? 'text-yellow-500' : 'text-red-500'}`}>
-                              {h.avg}{h.avg !== 'N/A' && '/5.0'}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          );
-        })}
+        {/* MENSAJE INICIAL */}
+        {!selectedDisciplinaId && (
+          <div className="text-center p-20 bg-white rounded-3xl border-2 border-dashed border-slate-100">
+            <div className="text-4xl mb-4">📊</div>
+            <h3 className="text-xl font-bold text-slate-800 mb-2">Bienvenido al Panel de Estadísticas</h3>
+            <p className="text-slate-400">Por favor, selecciona una disciplina arriba para comenzar el análisis.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
         {instructoresActivos.length === 0 && (
           <div className="text-center p-20 bg-white rounded-3xl border-2 border-dashed border-slate-100">
