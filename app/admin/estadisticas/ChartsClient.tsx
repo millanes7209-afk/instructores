@@ -213,8 +213,8 @@ export default function ChartsClient({
 
         <div className="flex flex-col md:flex-row gap-4 justify-center items-center max-w-5xl mx-auto bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
           {/* Filtro de Tiempo */}
-          <div className="w-full md:w-1/4">
-            <label className="block text-xs font-bold text-slate-400 uppercase mb-2 text-left ml-1">Periodo</label>
+          <div className="w-full md:w-1/3">
+            <label className="block text-xs font-bold text-slate-400 uppercase mb-2 text-left ml-1">Periodo de Análisis</label>
             <div className="flex bg-slate-50 p-1 rounded-xl border border-slate-200">
               <button 
                 onClick={() => setSelectedTimeRange('week')}
@@ -231,26 +231,8 @@ export default function ChartsClient({
             </div>
           </div>
 
-          {/* Filtro por Disciplina */}
-          <div className="w-full md:w-1/3">
-            <label className="block text-xs font-bold text-slate-400 uppercase mb-2 text-left ml-1">1. Selecciona Disciplina</label>
-            <select 
-              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none text-slate-700 font-medium text-sm focus:ring-2 focus:ring-blue-500/20"
-              onChange={(e) => {
-                setSelectedDisciplinaId(e.target.value);
-                setSelectedInstructorId(null); // Reset instructor when discipline changes
-              }}
-              value={selectedDisciplinaId}
-            >
-              <option value="">Selecciona una Disciplina</option>
-              {disciplinas.map((d) => (
-                <option key={d.id} value={d.id}>{d.nombre}</option>
-              ))}
-            </select>
-          </div>
-
           {/* Filtro por Sala (Opcional) */}
-          <div className="w-full md:w-1/4">
+          <div className="w-full md:w-1/3">
             <label className="block text-xs font-bold text-slate-400 uppercase mb-2 text-left ml-1">Filtrar por Sala</label>
             <select 
               className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none text-slate-700 font-medium text-sm"
@@ -266,11 +248,52 @@ export default function ChartsClient({
         </div>
       </div>
 
-      <div className="space-y-8">
+      <div className="space-y-10">
+        {/* PASO 1: SELECCIONAR DISCIPLINA (TARJETAS) */}
+        <div className="max-w-5xl mx-auto">
+          <h4 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4 ml-1 flex items-center gap-2">
+            <span className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-[10px] text-slate-500">1</span>
+            Selecciona Disciplina
+          </h4>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {disciplinas.map((d) => (
+              <button
+                key={d.id}
+                onClick={() => {
+                  setSelectedDisciplinaId(d.id.toString());
+                  setSelectedInstructorId(null);
+                }}
+                className={`p-5 rounded-3xl border transition-all text-center group relative overflow-hidden ${
+                  selectedDisciplinaId === d.id.toString()
+                  ? 'bg-blue-600 border-blue-600 shadow-xl shadow-blue-500/30'
+                  : 'bg-white border-slate-100 hover:border-blue-300 hover:shadow-lg'
+                }`}
+              >
+                <div className={`text-3xl mb-2 transition-transform group-hover:scale-110 duration-300 ${
+                  selectedDisciplinaId === d.id.toString() ? 'filter brightness-0 invert' : ''
+                }`}>
+                  {d.icono}
+                </div>
+                <span className={`text-[11px] font-black uppercase tracking-tight ${
+                  selectedDisciplinaId === d.id.toString() ? 'text-white' : 'text-slate-600'
+                }`}>
+                  {d.nombre}
+                </span>
+                {selectedDisciplinaId === d.id.toString() && (
+                  <div className="absolute top-2 right-2 w-2 h-2 bg-white rounded-full animate-pulse" />
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* PASO 2: LISTA DE INSTRUCTORES */}
         {selectedDisciplinaId && (
-          <div className="max-w-5xl mx-auto">
-            <h4 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4 ml-1">2. Selecciona Instructor</h4>
+          <div className="max-w-5xl mx-auto animate-in fade-in slide-in-from-left-4 duration-500">
+            <h4 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4 ml-1 flex items-center gap-2">
+              <span className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-[10px] text-slate-500">2</span>
+              Selecciona Instructor
+            </h4>
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
               {instructoresDeDisciplina.map((inst) => (
                 <button
