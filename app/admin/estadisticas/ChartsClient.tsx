@@ -54,9 +54,11 @@ export default function ChartsClient({
   const [selectedDisciplinaId, setSelectedDisciplinaId] = useState<string>('');
   const [selectedSala, setSelectedSala] = useState<string>('');
   const [selectedTimeRange, setSelectedTimeRange] = useState<'week' | 'month' | 'all'>('week');
+  const [selectedHorarioId, setSelectedHorarioId] = useState<number | null>(null);
 
   const salas = ['Sala 1', 'Sala 2', 'Sala 3', 'Sala 4', 'Sala 5'];
 
+  // 1. Filtrar instructores por disciplina
   const instructoresDeDisciplina = useMemo(() => {
     if (!selectedDisciplinaId) return [];
     const disciplinaNombre = disciplinas.find(d => d.id.toString() === selectedDisciplinaId)?.nombre.toLowerCase();
@@ -65,21 +67,34 @@ export default function ChartsClient({
     );
   }, [selectedDisciplinaId, instructores, horarios, disciplinas]);
 
+  // 2. Filtrar evaluaciones
   const filteredEvaluaciones = useMemo(() => {
     return evaluaciones.filter(e => {
       if (!e) return false;
+      
+      // Filtro de disciplina e instructor
       const matchDisciplina = selectedDisciplinaId
         ? e.disciplina_nombre?.toLowerCase() === disciplinas.find(d => d.id.toString() === selectedDisciplinaId)?.nombre.toLowerCase()
         : true;
-      const matchSala = selectedSala ? e.sala === selectedSala : true;
       const matchInstructor = selectedInstructorId ? Number(e.instructor_id) === selectedInstructorId : true;
-      if (selectedTimeRange === 'all') return matchDisciplina && matchSala && matchInstructor;
+      
+      // Filtro de clase específica (SI se ha seleccionado una)
+      const matchHorario = selectedHorarioId ? Number(e.horario_id) === selectedHorarioId : true;
+
+      // Filtro de sala (desde el selector manual)
+      const matchSala = selectedSala ? e.sala === selectedSala : true;
+
+      if (!matchDisciplina || !matchInstructor || !matchHorario || !matchSala) return false;
+
+      // Si el rango es 'Todo', no aplicamos filtro de tiempo adicional
+      if (selectedTimeRange === 'all') return true;
+
       const voteDate = e.created_at ? new Date(e.created_at) : null;
       if (!voteDate || isNaN(voteDate.getTime())) return false;
       const diffDays = (new Date().getTime() - voteDate.getTime()) / (1000 * 3600 * 24);
       return selectedTimeRange === 'week' ? diffDays <= 7 : diffDays <= 30;
     });
-  }, [evaluaciones, selectedDisciplinaId, selectedSala, selectedInstructorId, selectedTimeRange, disciplinas]);
+  }, [evaluaciones, selectedDisciplinaId, selectedSala, selectedInstructorId, selectedTimeRange, selectedHorarioId, disciplinas]);
 
   const getInstructorStats = (instructorId: number) => {
     const evs = filteredEvaluaciones.filter(e => Number(e.instructor_id) === Number(instructorId));
@@ -177,10 +192,11 @@ export default function ChartsClient({
         <div className="flex flex-wrap items-center justify-between gap-4 mb-10 bg-white p-5 rounded-[2rem] shadow-sm border border-slate-100">
           <button
             onClick={() => {
-              if (selectedInstructorId) setSelectedInstructorId(null);
+              if (selectedHorarioId) setSelectedHorarioId(null);
+              else if (selectedInstructorId) setSelectedInstructorId(null);
               else setSelectedDisciplinaId('');
             }}
-            className="flex items-center gap-2 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl font-bold transition-all"
+            className="flex items-center gap-2 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl font-bold transition-all active:scale-95"
           >
             ← Volver
           </button>
@@ -189,30 +205,36 @@ export default function ChartsClient({
               {(['week', 'month', 'all'] as const).map((r) => (
                 <button
                   key={r}
-                  onClick={() => setSelectedTimeRange(r)}
+                  onClick={() => {
+                    setSelectedTimeRange(r);
+                    if (r !== 'all') setSelectedHorarioId(null); // Reset class selection on time filter
+                  }}
                   className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${
                     selectedTimeRange === r ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400'
                   }`}
                 >
-                  {r === 'week' ? 'Semana' : r === 'month' ? 'Mes' : 'Todo'}
+                  {r === 'week' ? 'Semana' : r === 'month' ? 'Mes' : 'Histórico'}
                 </button>
               ))}
             </div>
-            <select
-              className="bg-slate-100 border-none rounded-2xl px-4 py-2 text-xs font-bold text-slate-700 outline-none"
-              value={selectedSala}
-              onChange={(e) => setSelectedSala(e.target.value)}
-            >
-              <option value="">Todas las Salas</option>
-              {salas.map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
+            
+            {!selectedHorarioId && (
+              <select
+                className="bg-slate-100 border-none rounded-2xl px-4 py-2 text-xs font-bold text-slate-700 outline-none"
+                value={selectedSala}
+                onChange={(e) => setSelectedSala(e.target.value)}
+              >
+                <option value="">Todas las Salas</option>
+                {salas.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            )}
           </div>
         </div>
       )}
 
       <div className="space-y-10">
         {!selectedDisciplinaId && (
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 animate-in fade-in slide-in-from-bottom-8">
             {disciplinas.map((d) => (
               <button
                 key={d.id}
@@ -227,7 +249,7 @@ export default function ChartsClient({
         )}
 
         {selectedDisciplinaId && !selectedInstructorId && (
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-right-8">
             <div className="text-center mb-10">
               <div className="text-5xl mb-4">{selectedDisciplina?.icono}</div>
               <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tight">Instructores de {selectedDisciplina?.nombre}</h2>
@@ -249,8 +271,34 @@ export default function ChartsClient({
           </div>
         )}
 
-        {selectedInstructor && (
-          <div className="animate-in fade-in slide-in-from-bottom-4">
+        {selectedInstructorId && selectedTimeRange === 'all' && !selectedHorarioId && (
+          <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-8">
+            <div className="text-center mb-8">
+              <h3 className="text-2xl font-black text-slate-900">Selecciona una Clase o Turno</h3>
+              <p className="text-slate-500">Para ver estadísticas detalladas, elige una de las sesiones de {selectedInstructor?.nombre}</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {getClassBreakdown(selectedInstructorId!).map((h) => (
+                <button
+                  key={h.id}
+                  onClick={() => setSelectedHorarioId(h.id)}
+                  className="p-6 bg-white border border-slate-100 rounded-3xl shadow-sm hover:shadow-xl hover:border-blue-500 transition-all flex items-center justify-between group"
+                >
+                  <div className="text-left">
+                    <div className="text-[10px] font-black text-blue-500 uppercase tracking-widest">{h.sala} • {Number(h.hora_inicio.substring(0,2)) < 13 ? 'Mañana' : 'Tarde'}</div>
+                    <div className="text-lg font-bold text-slate-800">{diaNombre(h.dia_semana)} {h.hora_inicio.substring(0,5)}</div>
+                  </div>
+                  <div className="bg-slate-50 px-4 py-2 rounded-2xl group-hover:bg-blue-600 group-hover:text-white transition-all">
+                    <span className="font-black">{h.total}</span> <span className="text-[10px] uppercase font-bold">votos</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {selectedInstructor && (selectedTimeRange !== 'all' || selectedHorarioId) && (
+          <div className="animate-in fade-in slide-in-from-bottom-8">
             {(() => {
               const stats = getInstructorStats(selectedInstructor.id);
               const chartData = createChartData(selectedInstructor.id);
