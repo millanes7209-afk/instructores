@@ -445,14 +445,5 @@ export default function ChartsClient({
   );
 }
 
-        {instructoresActivos.length === 0 && (
-          <div className="text-center p-20 bg-white rounded-3xl border-2 border-dashed border-slate-100">
-            <div className="text-4xl mb-4">🔍</div>
-            <h3 className="text-xl font-bold text-slate-800 mb-2">No hay datos en este periodo</h3>
-            <p className="text-slate-400">Intenta cambiando el filtro de tiempo o seleccionando otra sala.</p>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
+
+
