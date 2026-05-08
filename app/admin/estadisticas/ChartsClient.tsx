@@ -194,7 +194,7 @@ export default function ChartsClient({
           </button>
           <div className="flex items-center gap-4">
             <div className="flex bg-slate-100 p-1 rounded-2xl">
-              {(['week', 'month', 'all'] as const).map((r) => (
+              {(['all', 'week', 'month'] as const).map((r) => (
                 <button
                   key={r}
                   onClick={() => {
@@ -205,7 +205,7 @@ export default function ChartsClient({
                     selectedTimeRange === r ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400'
                   }`}
                 >
-                  {r === 'week' ? 'Semana' : r === 'month' ? 'Mes' : 'Por Clases'}
+                  {r === 'all' ? 'Clases' : r === 'week' ? 'Semana' : 'Mes'}
                 </button>
               ))}
             </div>
