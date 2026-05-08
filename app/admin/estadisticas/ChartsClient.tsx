@@ -123,9 +123,7 @@ export default function ChartsClient({
       satisfaccion: Math.round(satisfaccion * 100) / 100,
       calificacion: Math.round(calificacion * 100) / 100
     };
-  };
-
-  const getClassBreakdown = (instructorId: number) => {
+   const getClassBreakdown = (instructorId: number) => {
     const disciplinaNombre = disciplinas.find(d => d.id.toString() === selectedDisciplinaId)?.nombre.toLowerCase();
     const instructorHorarios = (horarios || []).filter(h => 
       Number(h.instructor_id) === Number(instructorId) && 
@@ -135,11 +133,12 @@ export default function ChartsClient({
     return instructorHorarios.map(h => {
       const classEvs = filteredEvaluaciones.filter(e => Number(e.horario_id) === Number(h.id));
       const total = classEvs.length;
-      const avg = total > 0 
-        ? (classEvs.reduce((sum, e) => sum + (Number(e.puntualidad || 0) + Number(e.satisfaccion || 0) + Number(e.calificacion_instructor || 0))/3, 0) / total).toFixed(1)
-        : 'N/A';
       
-      return { ...h, total, avg };
+      const avgPuntualidad = total > 0 ? (classEvs.reduce((sum, e) => sum + Number(e.puntualidad || 0), 0) / total).toFixed(1) : 'N/A';
+      const avgSatisfaccion = total > 0 ? (classEvs.reduce((sum, e) => sum + Number(e.satisfaccion || 0), 0) / total).toFixed(1) : 'N/A';
+      const avgEstrellas = total > 0 ? (classEvs.reduce((sum, e) => sum + Number(e.calificacion_instructor || 0), 0) / total).toFixed(1) : 'N/A';
+      
+      return { ...h, total, avgPuntualidad, avgSatisfaccion, avgEstrellas };
     });
   };
 
@@ -200,6 +199,7 @@ export default function ChartsClient({
   };
 
   const selectedInstructor = instructores.find(i => i.id === selectedInstructorId);
+  const selectedDisciplina = disciplinas.find(d => d.id.toString() === selectedDisciplinaId);
 
   return (
     <div className="w-full">
@@ -207,126 +207,121 @@ export default function ChartsClient({
         <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2">
           Dashboard de Rendimiento
         </h1>
-        <p className="text-slate-500 mb-8 max-w-xl mx-auto">
+        <p className="text-slate-500 max-w-xl mx-auto">
           Gestiona y visualiza el feedback por disciplina e instructor.
         </p>
-
-        <div className="flex flex-col md:flex-row gap-4 justify-center items-center max-w-5xl mx-auto bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-          {/* Filtro de Tiempo */}
-          <div className="w-full md:w-1/3">
-            <label className="block text-xs font-bold text-slate-400 uppercase mb-2 text-left ml-1">Periodo de Análisis</label>
-            <div className="flex bg-slate-50 p-1 rounded-xl border border-slate-200">
-              <button 
-                onClick={() => setSelectedTimeRange('week')}
-                className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${selectedTimeRange === 'week' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
-              >Semana</button>
-              <button 
-                onClick={() => setSelectedTimeRange('month')}
-                className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${selectedTimeRange === 'month' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
-              >Mes</button>
-              <button 
-                onClick={() => setSelectedTimeRange('all')}
-                className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${selectedTimeRange === 'all' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
-              >Todo</button>
-            </div>
-          </div>
-
-          {/* Filtro por Sala (Opcional) */}
-          <div className="w-full md:w-1/3">
-            <label className="block text-xs font-bold text-slate-400 uppercase mb-2 text-left ml-1">Filtrar por Sala</label>
-            <select 
-              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none text-slate-700 font-medium text-sm"
-              onChange={(e) => setSelectedSala(e.target.value)}
-              value={selectedSala}
-            >
-              <option value="">Todas las Salas</option>
-              {salas.map((s) => (
-                <option key={s} value={s}>{s}</option>
-              ))}
-            </select>
-          </div>
-        </div>
       </div>
 
-      <div className="space-y-10">
-        {/* PASO 1: SELECCIONAR DISCIPLINA (TARJETAS) */}
-        <div className="max-w-5xl mx-auto">
-          <h4 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4 ml-1 flex items-center gap-2">
-            <span className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-[10px] text-slate-500">1</span>
-            Selecciona Disciplina
-          </h4>
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {disciplinas.map((d) => (
-              <button
-                key={d.id}
+      {/* FILTROS GLOBALES (Siempre visibles si no estás en la pantalla inicial) */}
+      {(selectedDisciplinaId || selectedInstructorId) && (
+        <div className="max-w-5xl mx-auto mb-8 flex flex-col md:flex-row gap-4 justify-between items-center bg-white p-4 rounded-2xl shadow-sm border border-slate-100 animate-in fade-in duration-500">
+           <div className="flex gap-2">
+              <button 
                 onClick={() => {
-                  setSelectedDisciplinaId(d.id.toString());
-                  setSelectedInstructorId(null);
+                  if (selectedInstructorId) setSelectedInstructorId(null);
+                  else setSelectedDisciplinaId('');
                 }}
-                className={`p-5 rounded-3xl border transition-all text-center group relative overflow-hidden ${
-                  selectedDisciplinaId === d.id.toString()
-                  ? 'bg-blue-600 border-blue-600 shadow-xl shadow-blue-500/30'
-                  : 'bg-white border-slate-100 hover:border-blue-300 hover:shadow-lg'
-                }`}
+                className="btn-secondary px-4 py-2 text-sm flex items-center gap-2"
               >
-                <div className={`text-3xl mb-2 transition-transform group-hover:scale-110 duration-300 ${
-                  selectedDisciplinaId === d.id.toString() ? 'filter brightness-0 invert' : ''
-                }`}>
-                  {d.icono}
-                </div>
-                <span className={`text-[11px] font-black uppercase tracking-tight ${
-                  selectedDisciplinaId === d.id.toString() ? 'text-white' : 'text-slate-600'
-                }`}>
-                  {d.nombre}
-                </span>
-                {selectedDisciplinaId === d.id.toString() && (
-                  <div className="absolute top-2 right-2 w-2 h-2 bg-white rounded-full animate-pulse" />
-                )}
+                ← Volver
               </button>
-            ))}
-          </div>
-        </div>
+           </div>
+           
+           <div className="flex gap-4 items-center">
+              <div className="flex bg-slate-50 p-1 rounded-xl border border-slate-200">
+                <button 
+                  onClick={() => setSelectedTimeRange('week')}
+                  className={`px-4 py-1.5 text-[11px] font-bold rounded-lg transition-all ${selectedTimeRange === 'week' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500'}`}
+                >Semana</button>
+                <button 
+                  onClick={() => setSelectedTimeRange('month')}
+                  className={`px-4 py-1.5 text-[11px] font-bold rounded-lg transition-all ${selectedTimeRange === 'month' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500'}`}
+                >Mes</button>
+                <button 
+                  onClick={() => setSelectedTimeRange('all')}
+                  className={`px-4 py-1.5 text-[11px] font-bold rounded-lg transition-all ${selectedTimeRange === 'all' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500'}`}
+                >Todo</button>
+              </div>
 
-        {/* PASO 2: LISTA DE INSTRUCTORES */}
-        {selectedDisciplinaId && (
-          <div className="max-w-5xl mx-auto animate-in fade-in slide-in-from-left-4 duration-500">
-            <h4 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4 ml-1 flex items-center gap-2">
-              <span className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-[10px] text-slate-500">2</span>
-              Selecciona Instructor
+              <select 
+                className="p-2 bg-slate-50 border border-slate-200 rounded-xl outline-none text-slate-700 font-medium text-xs"
+                onChange={(e) => setSelectedSala(e.target.value)}
+                value={selectedSala}
+              >
+                <option value="">Todas las Salas</option>
+                {salas.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+           </div>
+        </div>
+      )}
+
+      <div className="space-y-10">
+        {/* PANTALLA 1: SELECCIONAR DISCIPLINA */}
+        {!selectedDisciplinaId && (
+          <div className="max-w-5xl mx-auto animate-in fade-in zoom-in-95 duration-500">
+            <h4 className="text-lg font-bold text-slate-800 mb-6 text-center uppercase tracking-widest">
+              Selecciona una Disciplina
             </h4>
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
+              {disciplinas.map((d) => (
+                <button
+                  key={d.id}
+                  onClick={() => {
+                    setSelectedDisciplinaId(d.id.toString());
+                    setSelectedInstructorId(null);
+                  }}
+                  className="p-8 rounded-[2.5rem] bg-white border border-slate-100 shadow-sm hover:shadow-2xl hover:shadow-blue-500/10 hover:border-blue-400 transition-all text-center group active:scale-95"
+                >
+                  <div className="text-5xl mb-4 group-hover:scale-110 transition-transform duration-300">
+                    {d.icono}
+                  </div>
+                  <span className="text-xs font-black uppercase tracking-tighter text-slate-700 group-hover:text-blue-600">
+                    {d.nombre}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* PANTALLA 2: LISTA DE INSTRUCTORES (Solo si disciplina seleccionada y NO instructor) */}
+        {selectedDisciplinaId && !selectedInstructorId && (
+          <div className="max-w-5xl mx-auto animate-in fade-in slide-in-from-right-4 duration-500">
+            <div className="text-center mb-8">
+              <span className="text-4xl mb-2 block">{selectedDisciplina?.icono}</span>
+              <h4 className="text-2xl font-black text-slate-900 uppercase tracking-tight">
+                Instructores de {selectedDisciplina?.nombre}
+              </h4>
+              <p className="text-slate-500">Elige un instructor para ver su rendimiento específico</p>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               {instructoresDeDisciplina.map((inst) => (
                 <button
                   key={inst.id}
                   onClick={() => setSelectedInstructorId(inst.id)}
-                  className={`p-4 rounded-2xl border transition-all text-center group ${
-                    selectedInstructorId === inst.id 
-                    ? 'bg-blue-600 border-blue-600 shadow-lg shadow-blue-500/30' 
-                    : 'bg-white border-slate-200 hover:border-blue-400 hover:shadow-md'
-                  }`}
+                  className="p-6 rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-xl hover:border-blue-500 transition-all group text-center"
                 >
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-2 font-bold ${
-                    selectedInstructorId === inst.id ? 'bg-white/20 text-white' : 'bg-blue-50 text-blue-600'
-                  }`}>
-                    {inst.iniciales}
+                  <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center mx-auto mb-4 group-hover:from-blue-600 group-hover:to-blue-500 transition-all duration-300">
+                    <span className="text-2xl font-black text-blue-600 group-hover:text-white">{inst.iniciales}</span>
                   </div>
-                  <span className={`text-xs font-bold block truncate ${
-                    selectedInstructorId === inst.id ? 'text-white' : 'text-slate-700'
-                  }`}>
+                  <span className="text-sm font-bold text-slate-800 group-hover:text-blue-600">
                     {inst.nombre}
                   </span>
                 </button>
               ))}
               {instructoresDeDisciplina.length === 0 && (
-                <div className="col-span-full py-8 text-center text-slate-400 border-2 border-dashed border-slate-200 rounded-2xl">
-                  No hay instructores programados para esta disciplina.
+                <div className="col-span-full py-20 text-center text-slate-400 border-2 border-dashed border-slate-100 rounded-[3rem]">
+                  No hay instructores registrados para esta disciplina.
                 </div>
               )}
             </div>
           </div>
         )}
 
-        {/* PASO 3: ESTADÍSTICAS DEL INSTRUCTOR SELECCIONADO */}
+        {/* PANTALLA 3: ESTADÍSTICAS DEL INSTRUCTOR SELECCIONADO */}
         {selectedInstructor && (
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
             {(() => {
@@ -335,7 +330,7 @@ export default function ChartsClient({
               const classBreakdown = getClassBreakdown(selectedInstructor.id);
 
               return (
-                <div className="premium-card p-6 md:p-8 border-t-4 border-t-blue-600">
+                <div className="premium-card p-6 md:p-8">
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 pb-6 border-b border-slate-100">
                     <div className="flex items-center gap-4">
                       <div className="w-16 h-16 bg-gradient-to-tr from-blue-600 to-blue-400 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/20">
@@ -344,12 +339,12 @@ export default function ChartsClient({
                       <div>
                         <h3 className="text-2xl font-bold text-slate-900">{selectedInstructor.nombre}</h3>
                         <p className="text-slate-500 font-medium">
-                          {stats.total} evaluaciones en el periodo seleccionado
+                          Disciplina: <span className="text-blue-600 font-bold">{selectedDisciplina?.nombre}</span> • {stats.total} votos
                         </p>
                       </div>
                     </div>
                     <div className="bg-blue-50 px-6 py-3 rounded-2xl border border-blue-100 text-center">
-                      <p className="text-xs font-bold text-blue-400 uppercase tracking-widest mb-1">Promedio General</p>
+                      <p className="text-xs font-bold text-blue-400 uppercase tracking-widest mb-1">Nota Media</p>
                       <p className="text-3xl font-black text-blue-600">{((stats.puntualidad + stats.satisfaccion + stats.calificacion) / 3).toFixed(1)}<span className="text-lg text-blue-300">/5.0</span></p>
                     </div>
                   </div>
@@ -413,37 +408,51 @@ export default function ChartsClient({
                     </div>
                   </div>
 
-                  {/* TABLA DE DESGLOSE POR CLASE */}
-                  <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100">
-                    <h6 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                  {/* TABLA DE DESGLOSE POR CLASE CON 3 COLUMNAS SEPARADAS */}
+                  <div className="bg-slate-50 rounded-[2rem] p-6 border border-slate-100">
+                    <h6 className="font-bold text-slate-800 mb-6 flex items-center gap-2">
                       <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                      Rendimiento por Clase (Source: Horarios)
+                      Rendimiento Detallado por Sesión
                     </h6>
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm text-left">
                         <thead>
-                          <tr className="text-slate-400 font-bold uppercase text-[10px] tracking-widest border-b border-slate-200">
-                            <th className="pb-3 px-2">Sala</th>
-                            <th className="pb-3 px-2">Turno</th>
-                            <th className="pb-3 px-2">Horario</th>
-                            <th className="pb-3 px-2 text-center">Votos Recibidos</th>
-                            <th className="pb-3 px-2 text-right">Nota Promedio</th>
+                          <tr className="text-slate-400 font-bold uppercase text-[9px] tracking-widest border-b border-slate-200">
+                            <th className="pb-3 px-2">Sala / Turno</th>
+                            <th className="pb-3 px-2">Día y Hora</th>
+                            <th className="pb-3 px-2 text-center">Votos</th>
+                            <th className="pb-3 px-2 text-center text-blue-500">Puntualidad</th>
+                            <th className="pb-3 px-2 text-center text-green-500">Satisfacción</th>
+                            <th className="pb-3 px-2 text-center text-orange-500">Instructor</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                           {classBreakdown.map((h, idx) => (
                             <tr key={idx} className="hover:bg-white/50 transition-colors">
-                              <td className="py-3 px-2 font-bold text-slate-700">{h.sala}</td>
-                              <td className="py-3 px-2 text-slate-600">{Number(h.hora_inicio.substring(0,2)) < 13 ? 'Mañana' : 'Tarde'}</td>
-                              <td className="py-3 px-2 text-slate-500">{diaNombre(h.dia_semana)} {h.hora_inicio ? String(h.hora_inicio).substring(0, 5) : 'N/A'}</td>
-                              <td className="py-3 px-2 text-center">
+                              <td className="py-4 px-2">
+                                <div className="font-bold text-slate-700">{h.sala}</div>
+                                <div className="text-[10px] text-slate-400 uppercase">{Number(h.hora_inicio.substring(0,2)) < 13 ? 'Mañana' : 'Tarde'}</div>
+                              </td>
+                              <td className="py-4 px-2 text-slate-500 font-medium">{diaNombre(h.dia_semana)} {h.hora_inicio ? String(h.hora_inicio).substring(0, 5) : 'N/A'}</td>
+                              <td className="py-4 px-2 text-center">
                                 <span className="bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full font-bold text-[10px]">
                                   {h.total}
                                 </span>
                               </td>
-                              <td className="py-3 px-2 text-right">
-                                <span className={`font-black ${Number(h.avg) >= 4 ? 'text-green-500' : Number(h.avg) >= 3 ? 'text-yellow-500' : 'text-red-500'}`}>
-                                  {h.avg}{h.avg !== 'N/A' && '/5.0'}
+                              {/* 3 Columnas Separadas */}
+                              <td className="py-4 px-2 text-center">
+                                <span className={`font-black ${Number(h.avgPuntualidad) >= 4 ? 'text-blue-500' : 'text-slate-400'}`}>
+                                  {h.avgPuntualidad}
+                                </span>
+                              </td>
+                              <td className="py-4 px-2 text-center">
+                                <span className={`font-black ${Number(h.avgSatisfaccion) >= 4 ? 'text-green-500' : 'text-slate-400'}`}>
+                                  {h.avgSatisfaccion}
+                                </span>
+                              </td>
+                              <td className="py-4 px-2 text-center">
+                                <span className={`font-black ${Number(h.avgEstrellas) >= 4 ? 'text-orange-500' : 'text-slate-400'}`}>
+                                  {h.avgEstrellas}
                                 </span>
                               </td>
                             </tr>
@@ -455,15 +464,6 @@ export default function ChartsClient({
                 </div>
               );
             })()}
-          </div>
-        )}
-
-        {/* MENSAJE INICIAL */}
-        {!selectedDisciplinaId && (
-          <div className="text-center p-20 bg-white rounded-3xl border-2 border-dashed border-slate-100">
-            <div className="text-4xl mb-4">📊</div>
-            <h3 className="text-xl font-bold text-slate-800 mb-2">Bienvenido al Panel de Estadísticas</h3>
-            <p className="text-slate-400">Por favor, selecciona una disciplina arriba para comenzar el análisis.</p>
           </div>
         )}
       </div>
