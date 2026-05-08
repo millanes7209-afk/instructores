@@ -323,39 +323,45 @@ export default function ChartsClient({
                 </div>
 
                 <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm overflow-hidden">
-                  <h4 className="font-black text-slate-900 mb-6 flex items-center gap-2">
-                    <span className="w-2 h-6 bg-blue-600 rounded-full"></span>
-                    Rendimiento Detallado por Sesión
-                  </h4>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left">
-                      <thead>
-                        <tr className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">
-                          <th className="pb-4 px-4">Sala / Turno</th>
-                          <th className="pb-4 px-4">Día / Hora</th>
-                          <th className="pb-4 px-4 text-center">Votos</th>
-                          <th className="pb-4 px-4 text-center text-blue-500">Punt.</th>
-                          <th className="pb-4 px-4 text-center text-green-500">Satisf.</th>
-                          <th className="pb-4 px-4 text-center text-orange-500">Instr.</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-50">
-                        {breakdown.map((h, idx) => (
-                          <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
-                            <td className="py-5 px-4 font-bold text-slate-700">
-                              {h.sala}
-                              <div className="text-[9px] font-black text-slate-300 uppercase">{Number(h.hora_inicio.substring(0,2)) < 13 ? 'Mañana' : 'Tarde'}</div>
-                            </td>
-                            <td className="py-5 px-4 text-slate-500 text-sm">{diaNombre(h.dia_semana)} {String(h.hora_inicio || '').substring(0, 5)}</td>
-                            <td className="py-5 px-4 text-center"><span className="px-2 py-1 bg-slate-100 rounded-lg font-black text-xs">{h.total}</span></td>
-                            <td className="py-5 px-4 text-center font-black text-blue-600">{h.punt}</td>
-                            <td className="py-5 px-4 text-center font-black text-green-600">{h.sat}</td>
-                            <td className="py-5 px-4 text-center font-black text-orange-600">{h.est}</td>
+                    <h4 className="font-black text-slate-900 mb-6 flex items-center gap-2">
+                      <span className="w-2 h-6 bg-blue-600 rounded-full"></span>
+                      Rendimiento Detallado por Sesión
+                    </h4>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left">
+                        <thead>
+                          <tr className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">
+                            <th className="pb-4 px-4">Sala / Turno</th>
+                            <th className="pb-4 px-4">Día / Hora</th>
+                            <th className="pb-4 px-4 text-center">Votos</th>
+                            <th className="pb-4 px-4 text-center text-blue-500">Puntualidad</th>
+                            <th className="pb-4 px-4 text-center text-green-500">Satisfacción</th>
+                            <th className="pb-4 px-4 text-center text-orange-500">Calificación Instructor</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody className="divide-y divide-slate-50">
+                          {breakdown.map((h, idx) => (
+                            <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
+                              <td className="py-5 px-4 font-bold text-slate-700">
+                                {h.sala}
+                                <div className="text-[9px] font-black text-slate-300 uppercase">{Number(h.hora_inicio.substring(0,2)) < 13 ? 'Mañana' : 'Tarde'}</div>
+                              </td>
+                              <td className="py-5 px-4 text-slate-500 text-sm">{diaNombre(h.dia_semana)} {String(h.hora_inicio || '').substring(0, 5)}</td>
+                              <td className="py-5 px-4 text-center">
+                                <span className="px-3 py-1 bg-slate-100 rounded-full font-black text-xs text-slate-600 border border-slate-200">
+                                  {h.total} votos
+                                </span>
+                              </td>
+                              <td className="py-5 px-4 text-center font-black text-blue-600 text-lg">{h.punt}</td>
+                              <td className="py-5 px-4 text-center font-black text-green-600 text-lg">{h.sat}</td>
+                              <td className="py-5 px-4 text-center font-black text-orange-600 text-lg">{h.est}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
+
                 </div>
               </div>
             );
