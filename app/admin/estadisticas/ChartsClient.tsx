@@ -55,6 +55,8 @@ export default function ChartsClient({
   const [selectedSala, setSelectedSala] = useState<string>('');
   const [selectedTimeRange, setSelectedTimeRange] = useState<'week' | 'month' | 'all'>('all');
   const [selectedHorarioId, setSelectedHorarioId] = useState<number | null>(null);
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
 
   const salas = ['Sala 1', 'Sala 2', 'Sala 3', 'Sala 4', 'Sala 5'];
 
@@ -83,8 +85,21 @@ export default function ChartsClient({
 
       const voteDate = e.created_at ? new Date(e.created_at) : null;
       if (!voteDate || isNaN(voteDate.getTime())) return false;
+
+      if (selectedTimeRange === 'week') {
+        if (startDate && endDate) {
+          const start = new Date(startDate);
+          start.setHours(0, 0, 0, 0);
+          const end = new Date(endDate);
+          end.setHours(23, 59, 59, 999);
+          return voteDate >= start && voteDate <= end;
+        }
+        const diffDays = (new Date().getTime() - voteDate.getTime()) / (1000 * 3600 * 24);
+        return diffDays <= 7;
+      }
+
       const diffDays = (new Date().getTime() - voteDate.getTime()) / (1000 * 3600 * 24);
-      return selectedTimeRange === 'week' ? diffDays <= 7 : diffDays <= 30;
+      return diffDays <= 30;
     });
   }, [evaluaciones, selectedDisciplinaId, selectedSala, selectedInstructorId, selectedTimeRange, selectedHorarioId, disciplinas]);
 
@@ -209,6 +224,27 @@ export default function ChartsClient({
                 </button>
               ))}
             </div>
+            
+            {selectedTimeRange === 'week' && (
+              <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-2xl animate-in zoom-in-95 duration-200">
+                <input 
+                  type="date" 
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="bg-white border-none rounded-xl px-3 py-1.5 text-[10px] font-black text-slate-600 outline-none"
+                  placeholder="Inicio"
+                />
+                <span className="text-slate-400 font-bold text-[10px]">al</span>
+                <input 
+                  type="date" 
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="bg-white border-none rounded-xl px-3 py-1.5 text-[10px] font-black text-slate-600 outline-none"
+                  placeholder="Fin"
+                />
+              </div>
+            )}
+
             {!selectedHorarioId && (
               <select
                 className="bg-slate-100 border-none rounded-2xl px-4 py-2 text-xs font-bold text-slate-700 outline-none"
