@@ -4,7 +4,22 @@ import { query } from '@/lib/db';
 export const dynamic = 'force-dynamic';
 
 export default async function DisciplinasIndex() {
-  const result = await query('SELECT * FROM disciplinas ORDER BY nombre ASC');
+  const now = new Date();
+  const diaSemana = now.getDay() === 0 ? 7 : now.getDay();
+  const h = now.getHours().toString().padStart(2, '0');
+  const m = now.getMinutes().toString().padStart(2, '0');
+  const s = now.getSeconds().toString().padStart(2, '0');
+  const horaActual = `${h}:${m}:${s}`;
+
+  const result = await query(`
+    SELECT DISTINCT d.* 
+    FROM disciplinas d
+    JOIN horarios h ON d.id = h.disciplina_id
+    WHERE h.dia_semana = $1
+    AND h.hora_inicio BETWEEN ($2::TIME - INTERVAL '2 hours') AND ($2::TIME + INTERVAL '2 hours')
+    ORDER BY d.nombre ASC
+  `, [diaSemana, horaActual]);
+  
   const disciplinas = result.rows as any[];
 
   return (
@@ -44,6 +59,16 @@ export default async function DisciplinasIndex() {
             </Link>
           ))}
         </div>
+
+        {disciplinas.length === 0 && (
+          <div className="text-center p-12 bg-slate-50 rounded-3xl border border-slate-100 max-w-xl mx-auto">
+            <span className="text-4xl mb-4 block">😴</span>
+            <h3 className="text-xl font-bold text-slate-900 mb-2">No hay clases activas en este momento</h3>
+            <p className="text-slate-500">
+              Vuelve cuando esté por comenzar tu clase o al finalizar la misma para calificar a tu instructor.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
