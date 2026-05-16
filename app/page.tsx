@@ -16,7 +16,7 @@ export default async function DisciplinasIndex() {
     FROM disciplinas d
     JOIN horarios h ON d.id = h.disciplina_id
     WHERE h.dia_semana = $1
-    AND h.hora_inicio BETWEEN ($2::TIME - INTERVAL '2 hours') AND ($2::TIME + INTERVAL '2 hours')
+    AND h.hora_inicio BETWEEN ($2::TIME - INTERVAL '2 hours') AND ($2::TIME + INTERVAL '30 minutes')
     ORDER BY d.nombre ASC
   `, [diaSemana, horaActual]);
   
